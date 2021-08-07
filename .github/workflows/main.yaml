@@ -16,7 +16,7 @@ jobs:
           with:
             mdbook-version: 'latest'
 
-        - run: mdbook build book/neural_net_control/
+        - run: mdbook build book/
 
         - name: Deploy
           uses: peaceiris/actions-gh-pages@v3
