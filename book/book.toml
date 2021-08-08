@@ -5,8 +5,16 @@ multilingual = false
 src = "src"
 title = "Automatic Differentiation: Brief Overview"
 
+[preprocessor.toc]
+command = "mdbook-toc"
+renderer = ["html"]
+
 [output.html]
 mathjax-support = true
+additional-js =["mermaid.min.js", "mermaid-init.js"]
 
 [output.html.playground]
 editable = true
+[preprocessor]
+[preprocessor.mermaid]
+command = "mdbook-mermaid"
