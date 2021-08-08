@@ -3,7 +3,10 @@ authors = ["Diego Marcano"]
 language = "en"
 multilingual = false
 src = "src"
-title = "automatic_differentiation"
+title = "Automatic Differentiation: Brief Overview"
 
 [output.html]
 mathjax-support = true
+
+[output.html.playground]
+editable = true
