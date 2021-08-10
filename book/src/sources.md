@@ -10,12 +10,19 @@ This is a growing list of the sources I've been using to learn a bit about AD an
 
 [Reverse Mode Automatic Differentiation](https://www.youtube.com/watch?v=EEbnprb_YTU&ab_channel=NathanSprague)
 
-[Rust Ml Library](https://bilal2vec.github.io/blog/blog/2020/rust-ml-library/)
+[L2: A Rust implementation of backwards automatic differentiation](https://bilal2vec.github.io/blog/blog/2020/rust-ml-library/)
 
 [Build Your Own Automatic Differentiation Program](https://towardsdatascience.com/build-your-own-automatic-differentiation-program-6ecd585eec2a)
 
 [Automatic Differentiation Step by Step](https://marksaroufim.medium.com/automatic-differentiation-step-by-step-24240f97a6e6)
 
+[CSE599: Lecture 4: Backpropagation and Automatic Differentiation](https://dlsys.cs.washington.edu/pdf/lecture4.pdf)
+
+[CS 231 Convolutional Neural Networks](https://cs231n.github.io/convolutional-networks/)
+
+[Autodidact: a pedagogical implementation of Autograd](https://github.com/mattjj/autodidact)
+
+[numpy_autograd](https://github.com/evcu/numpy_autograd)
 # Sources used with this mdbook 
 
 [MD book table of contents and diagraming](https://fnordig.de/2019/07/11/mdbook-toc-and-mermaid-preprocessors/)
