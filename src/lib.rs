@@ -1,4 +1,5 @@
 mod ops; 
+mod forward_mode;
 
 
 pub struct Tensor { 
