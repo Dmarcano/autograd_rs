@@ -14,5 +14,5 @@ mathjax-support = true
 
 [output.html.playground]
 editable = true
-default-theme = "Rust"
+default-theme = "rust"
 
