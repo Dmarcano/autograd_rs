@@ -1,8 +1,8 @@
 # Summary
 
 - [Intro](./intro.md)
-- [What is Automatic Differentiation](./chapter1/chapter_1.md)
-- [A Motivating Example](./learningByExample/learning_by_example.md)
-    - [AD In Forward Mode](./chapter_2.md)
-    - [AD in Backward Mode](./chapter_3.md)
+- [TODO: What is Automatic Differentiation](./chapter1/chapter_1.md)
+- [Learning AD By Example](./learningByExample/learning_by_example.md)
+    - [TODO: Forward Mode AD](./learningByExample/forward_ad.md)
+    - [TODO: Backward Mode AD](./learningByExample/backward_ad.md)
 - [Sources](./sources.md)
