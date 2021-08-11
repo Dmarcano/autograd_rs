@@ -16,7 +16,7 @@ jobs:
           with:
             mdbook-version: 'latest'
             
-        - run: cargo install mdbook-toc mdbook-mermaid
+        - run: cargo install mdbook-toc 
         - run: mdbook build book/
 
         - name: Deploy
