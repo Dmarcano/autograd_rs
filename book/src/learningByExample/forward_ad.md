@@ -49,9 +49,18 @@ With all subsequent expressions we pass along the previously calculated derivati
 
 From this we can see from the execution trace where our derivatives come from and how calculating derivatives node by node help save some time.
 
+<!-- ```rust -->
+<!-- {{#playground ../../../examples/forward_ad_book_example.rs}} -->
+<!-- ``` -->
+<!-- {{#playground ../../../examples/forward_ad_book_example.rs}} -->
+
+
 
 ## Execution Graph Approach
 
 
-
 ## Considerations to Implementing an Operation Node for AD
+
+
+
+## Further Reading: Computing Directional Derivatices
