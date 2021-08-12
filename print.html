@@ -208,6 +208,7 @@ of the node above:</p>
 <li><a href="learningByExample/forward_ad.html#execution-trace-approach">Execution Trace Approach</a></li>
 <li><a href="learningByExample/forward_ad.html#execution-graph-approach">Execution Graph Approach</a></li>
 <li><a href="learningByExample/forward_ad.html#considerations-to-implementing-an-operation-node-for-ad">Considerations to Implementing an Operation Node for AD</a></li>
+<li><a href="learningByExample/forward_ad.html#further-reading-computing-directional-derivatices">Further Reading: Computing Directional Derivatices</a></li>
 </ul>
 <p>Forward AD is the more straightforward implementation of the two and I believe can really help someone with the intuition that makes backward AD make a bit more sense. So let's get started by again looking at our motivating example. </p>
 <p>We want to take the derivative of the following function:</p>
@@ -268,11 +269,87 @@ of the node above:</p>
 </li>
 </ol>
 <p>From this we can see from the execution trace where our derivatives come from and how calculating derivatives node by node help save some time.</p>
+<!-- ```rust -->
+<!-- ```rust
+#![allow(unused_variables)]
+extern crate autograd_rs;
+
+use autograd_rs::forward_mode::ForwardTensor;
+
+// this is an example function from the paper https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf
+// which is referenced in the book tutorial for forward AD.
+fn example_fn(x1 : ForwardTensor, x2 : ForwardTensor) -> ForwardTensor{ 
+
+    ((x1/x2).sin() + x1/x2 - (x2).exp()) * (x1/x2 - x2.exp())
+}
+
+fn main() { 
+    let mut x1 = ForwardTensor::new(1.5, 1.0, false);
+    let mut x2 = ForwardTensor::new(0.5, 0.0, false); 
+
+    let output = example_fn(x1, x2);
+
+    let step_size = 0.001;
+    let deriv_estimate = (example_fn(x1 + step_size, x2) - example_fn(x1, x2))/step_size;
+
+    println!("Value: {}, derivative w.r.t x1 {}", output.data, output.deriv);
+    println!("Derivative estimate: {}", deriv_estimate.data);
+
+    
+    x2.deriv = 1.0; 
+    x1.deriv = 0.0; 
+
+    let output_wrt_x2 = example_fn(x1, x2); 
+
+}
+
+
+```
+ -->
+<!-- ``` -->
+<!-- ```rust
+#![allow(unused_variables)]
+extern crate autograd_rs;
+
+use autograd_rs::forward_mode::ForwardTensor;
+
+// this is an example function from the paper https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf
+// which is referenced in the book tutorial for forward AD.
+fn example_fn(x1 : ForwardTensor, x2 : ForwardTensor) -> ForwardTensor{ 
+
+    ((x1/x2).sin() + x1/x2 - (x2).exp()) * (x1/x2 - x2.exp())
+}
+
+fn main() { 
+    let mut x1 = ForwardTensor::new(1.5, 1.0, false);
+    let mut x2 = ForwardTensor::new(0.5, 0.0, false); 
+
+    let output = example_fn(x1, x2);
+
+    let step_size = 0.001;
+    let deriv_estimate = (example_fn(x1 + step_size, x2) - example_fn(x1, x2))/step_size;
+
+    println!("Value: {}, derivative w.r.t x1 {}", output.data, output.deriv);
+    println!("Derivative estimate: {}", deriv_estimate.data);
+
+    
+    x2.deriv = 1.0; 
+    x1.deriv = 0.0; 
+
+    let output_wrt_x2 = example_fn(x1, x2); 
+
+}
+
+
+```
+ -->
 <h2 id="execution-graph-approach"><a class="header" href="#execution-graph-approach">Execution Graph Approach</a></h2>
 <h2 id="considerations-to-implementing-an-operation-node-for-ad"><a class="header" href="#considerations-to-implementing-an-operation-node-for-ad">Considerations to Implementing an Operation Node for AD</a></h2>
+<h2 id="further-reading-computing-directional-derivatices"><a class="header" href="#further-reading-computing-directional-derivatices">Further Reading: Computing Directional Derivatices</a></h2>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="backward-ad"><a class="header" href="#backward-ad">Backward AD</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="sources-for-learning"><a class="header" href="#sources-for-learning">Sources for learning</a></h1>
 <p>This is a growing list of the sources I've been using to learn a bit about AD and how to implement it.</p>
+<p><a href="https://jmlr.org/papers/volume18/17-468/17-468.pdf">Automatic Differentiation in Machine Learning: a Survey</a></p>
 <p><a href="https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf">COS 324 - Computing Gradients by Backpropagation</a></p>
 <p><a href="https://www.cs.toronto.edu/%7Ergrosse/courses/csc321_2018/slides/lec10.pdf">CSC 321 Lecture 10 - Automatic Differentiation</a></p>
 <p><a href="https://www.youtube.com/watch?v=wG_nF1awSSY">What is Automatic Differentiation?</a></p>
