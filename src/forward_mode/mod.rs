@@ -17,6 +17,18 @@ pub struct ForwardTensor {
     debug : bool,   
 }
 
+impl Add<f32> for ForwardTensor { 
+    type Output = ForwardTensor; 
+
+    
+    fn add(self, other : f32) -> Self::Output { 
+        // a constant has no affect on the derivative of self so it's derivative is 0
+        let other_tensor = ForwardTensor::new(other, 0.0, false); 
+        self + other_tensor
+    }
+}
+
+
 impl Add for ForwardTensor { 
     type Output = ForwardTensor;
 
@@ -49,6 +61,18 @@ impl Sub for ForwardTensor {
 
     }
 }
+
+impl Sub<f32> for ForwardTensor { 
+    type Output = ForwardTensor; 
+    
+    fn sub(self, other : f32) -> Self::Output { 
+        // a constant has no affect on the derivative of self so it's derivative is 0
+        let other_tensor = ForwardTensor::new(other, 0.0, false); 
+        self - other_tensor
+    }
+}
+
+
 
 impl Mul<f32> for ForwardTensor { 
     type Output = ForwardTensor; 
@@ -89,7 +113,7 @@ impl Div for ForwardTensor {
 
     
     fn div(self, other: ForwardTensor) -> Self::Output {
-        let data = self.data - other.data; 
+        let data = self.data /  other.data; 
         let deriv = (self.deriv * other.data - self.data * other.deriv) / (other.data * other.data);
 
         if self.debug { 
@@ -100,12 +124,23 @@ impl Div for ForwardTensor {
     }
 }
 
+impl Div<f32> for ForwardTensor { 
+    type Output = ForwardTensor; 
+
+    fn div(self, other: f32) -> Self::Output { 
+        // The chain rule on division by a constant is the same as multiplication for it's reciprocal
+        let reciprocal = 1.0/other; 
+        self * reciprocal
+    }
+}
+
 impl ForwardTensor { 
 
     pub fn new(data : f32, deriv : f32, debug : bool) -> Self { 
         ForwardTensor{data, deriv, debug}
     }
     
+    /// computes e^(tensor.data), (the exponential function)
     pub fn exp(self) -> Self { 
         let data = self.data.exp(); 
         let deriv = data * self.deriv;
@@ -118,6 +153,7 @@ impl ForwardTensor {
 
     }
 
+    /// computes the sin of the value of the tensor (in radians)
     pub fn sin(self) -> Self { 
         let data = self.data.sin(); 
         let deriv = self.data.cos() * self.deriv;
@@ -135,6 +171,8 @@ impl ForwardTensor {
 mod tests {
 
     use super::*;
+    use approx::*;
+    use std::f32;
 
     #[test]
     fn add_test() {
@@ -192,16 +230,71 @@ mod tests {
 
     #[test]
     fn div_test() {
-        unimplemented!();
+        // two variables who have non-zero derivatives to some other tensor
+        let x = ForwardTensor::new(2.0 , 1.0, false);
+        let y = ForwardTensor::new(3.0, 3.0, false); 
+
+        let output = x/y; 
+
+        let expected_data = 2.0/3.0; 
+        let expected_deriv = (3.0*1.0 - 3.0*2.0)/9.0;
+
+        assert_eq!(output.data, expected_data);
+        assert_eq!(output.deriv, expected_deriv);
+
+        let constant = 3.0; 
+
+        let expected_data = expected_data /constant; 
+        let expected_deriv = expected_deriv/constant;
+
+        let output2 = output/constant;
+
+        assert!(abs_diff_eq!(output2.data, expected_data, epsilon = f32::EPSILON)); 
+        assert!(abs_diff_eq!(output2.deriv, expected_deriv, epsilon = f32::EPSILON));
     }
 
     #[test]
     fn exp_test() {
-        unimplemented!();
+        let x = ForwardTensor::new(2.0 , 5.0, false);
+
+        let output = x.exp(); 
+        let expected   = f32::exp(2.0);
+        let expected_deriv = f32::exp(2.0) * 5.0; 
+
+        assert!(relative_eq!(output.data, expected));
+        assert!(relative_eq!(output.deriv, expected_deriv));
     }
 
     #[test]
     fn sin_test() {
-        unimplemented!();
+
+        let x = ForwardTensor::new(f32::consts::PI/6.0, 3.0, false );
+        let output = x.sin();
+
+        let expected = f32::sin(f32::consts::PI/6.0);
+        let expected_deriv = f32::cos(f32::consts::PI/6.0) * 3.0; 
+
+        assert!(relative_eq!(output.data, expected));
+        assert!(relative_eq!(output.deriv, expected_deriv));
+    }
+
+    #[test]
+    fn complex_func_test() {
+
+        let x1 = ForwardTensor::new(2.0, 1.0, false); 
+        let x2 = ForwardTensor::new(3.0, 0.0, false); 
+
+        fn complex_func(x1 : ForwardTensor, x2: ForwardTensor) -> ForwardTensor { 
+            (x1*x2).sin() + (x1/x2).exp()
+        }
+
+        let output = complex_func(x1, x2);
+
+        let expected = f32::sin(x1.data * x2.data) + f32::exp(x1.data/x2.data);
+        // writing derivatives by hand is a pain
+        let expected_deriv = f32::cos(x1.data*x2.data)*(x1.deriv * x2.data + x2.deriv * x1.data) + (f32::exp(x1.data/x2.data)*(x1.deriv*x2.data - x1.data * x2.deriv)/(x2.data*x2.data ));
+
+        assert!(relative_eq!(output.data, expected));
+        assert!(relative_eq!(output.deriv, expected_deriv));
     }
 }
