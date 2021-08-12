@@ -3,6 +3,8 @@
 
 use std::ops::{Add, Mul, Div, Sub};
 
+use auto_ops::*;
+
 
 /// # Overview
 /// A simple wrapper around a float that accumulates a derivative and who's mathematical operations
@@ -10,12 +12,18 @@ use std::ops::{Add, Mul, Div, Sub};
 /// contains the derivative with respect to one of the initial input tensors. 
 /// 
 /// ## Usage
+/// 
+/// forward mode tensors can be used like normal floating points values. The basic math operations plus a few subset of functions 
+/// on floats work. With each operation, a new tensor is returned
 #[derive(Copy, Clone, Debug)]
 pub struct ForwardTensor { 
     pub data : f32, 
     pub deriv : f32,  
     debug : bool,   
 }
+
+// https://crates.io/crates/auto_ops/0.3.0
+impl_op_ex!(* |lhs : f32, rhs : ForwardTensor| -> ForwardTensor {rhs*lhs});
 
 impl Add<f32> for ForwardTensor { 
     type Output = ForwardTensor; 
@@ -164,6 +172,19 @@ impl ForwardTensor {
 
          ForwardTensor { data, deriv , debug: self.debug }
     }
+
+    /// computes the cos of the value of the tensor (in radians)
+    pub fn cos(self) -> Self { 
+        let data = self.data.cos(); 
+
+        let deriv = -self.data.sin() * self.deriv;
+
+        if self.debug { 
+            println!("Performing Tensort exp with {}  \nwith derivative {}  \nwhich outputs: data {}  derivative {}", self.data, self.deriv, data, deriv);
+        }
+
+         ForwardTensor { data, deriv , debug: self.debug }
+    }
 }
 
 
@@ -276,6 +297,19 @@ mod tests {
 
         assert!(relative_eq!(output.data, expected));
         assert!(relative_eq!(output.deriv, expected_deriv));
+    }
+
+    #[test]
+    fn cos_test() {
+        let x = ForwardTensor::new(f32::consts::PI/6.0, 3.0, false );
+        let output = x.cos();
+
+        let expected = f32::cos(f32::consts::PI/6.0);
+        let expected_deriv = -f32::sin(f32::consts::PI/6.0) * 3.0; 
+
+        assert!(relative_eq!(output.data, expected));
+        assert!(relative_eq!(output.deriv, expected_deriv));
+
     }
 
     #[test]
