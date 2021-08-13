@@ -85,7 +85,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Intro</a></li><li class="chapter-item expanded "><a href="chapter1/chapter_1.html"><strong aria-hidden="true">2.</strong> TODO: What is Automatic Differentiation</a></li><li class="chapter-item expanded "><a href="learningByExample/learning_by_example.html"><strong aria-hidden="true">3.</strong> Learning AD By Example</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="learningByExample/forward_ad.html"><strong aria-hidden="true">3.1.</strong> TODO: Forward Mode AD</a></li><li class="chapter-item expanded "><a href="learningByExample/backward_ad.html"><strong aria-hidden="true">3.2.</strong> TODO: Backward Mode AD</a></li></ol></li><li class="chapter-item expanded "><a href="sources.html"><strong aria-hidden="true">4.</strong> Sources</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Intro</a></li><li class="chapter-item expanded "><a href="chapter1/chapter_1.html"><strong aria-hidden="true">2.</strong> TODO: What is Automatic Differentiation</a></li><li class="chapter-item expanded "><a href="learningByExample/learning_by_example.html"><strong aria-hidden="true">3.</strong> Learning AD By Example</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="learningByExample/forward_ad.html"><strong aria-hidden="true">3.1.</strong> Forward Mode AD</a></li><li class="chapter-item expanded "><a href="learningByExample/backward_ad.html"><strong aria-hidden="true">3.2.</strong> TODO: Backward Mode AD</a></li></ol></li><li class="chapter-item expanded "><a href="sources.html"><strong aria-hidden="true">4.</strong> Sources</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -187,12 +187,12 @@ will clearly help with the intuition of what AD is trying to achieve.</p>
 <li>\( y = v_6 \)</li>
 </ol>
 <p><em>(Do note that the \( \times \) operator here means some sort of multiplication between scalars/matrices with other scalars/matrices. So no cross products)</em></p>
-<p>This list above is sometimes called an <strong>execution trace</strong> or a <strong>wengert list</strong> but the most important part is that it separates our function into a set of intermediate steps that makes it easier to reason about how to propagate derivatives. </p>
+<p>This list above is sometimes called an <strong>execution trace</strong> or a <strong>computational list</strong> but the most important part is that it separates our function into a set of intermediate steps that makes it easier to reason about how to propagate derivatives. </p>
 <p>I think this property is better exemplefied by the graph representation of an execution trace.</p>
-<center><img src="learningByExample/images/Example Execution Graph.png">Graph of Execution Trace</center>
+<center><img src="learningByExample/images/Example_Execution_Graph.png">Graph of Execution Trace</center>
 <p>To properly understand what this graph means we first must define what each node means.
-Each node in this graph primarily represents an <strong>operator</strong> of some sorts. Let's look at an example for node 5 to see what this means.</p>
-<center><img src="learningByExample/images/Sample Node V5.png">The node of the value V5 is the addition operator on two input variables</center>
+Each node in this graph primarily represents an <strong>operator</strong> of some sorts. Let's look at an example for node \( v_{4} \) to see what this means.</p>
+<center><img src="learningByExample/images/Sample_Node_ V5.png">The node of the value V5 is the addition operator on two input variables</center>
 <p>Each node in our graph is some sort of elementary operation. This includes operators like addition, multiplication, or functions like 
 trigonometric functions or exponential functions to name a few. A node takes an input depending on the type of function it is. In the case
 of the node above:</p>
@@ -208,7 +208,7 @@ of the node above:</p>
 <li><a href="learningByExample/forward_ad.html#execution-trace-approach">Execution Trace Approach</a></li>
 <li><a href="learningByExample/forward_ad.html#execution-graph-approach">Execution Graph Approach</a></li>
 <li><a href="learningByExample/forward_ad.html#considerations-to-implementing-an-operation-node-for-ad">Considerations to Implementing an Operation Node for AD</a></li>
-<li><a href="learningByExample/forward_ad.html#further-reading-computing-directional-derivatices">Further Reading: Computing Directional Derivatices</a></li>
+<li><a href="learningByExample/forward_ad.html#further-reading-computing-directional-derivatives">Further Reading: Computing Directional Derivatives</a></li>
 </ul>
 <p>Forward AD is the more straightforward implementation of the two and I believe can really help someone with the intuition that makes backward AD make a bit more sense. So let's get started by again looking at our motivating example. </p>
 <p>We want to take the derivative of the following function:</p>
@@ -228,9 +228,9 @@ of the node above:</p>
 <li>\( y = v_6 \)</li>
 </ol>
 <p>With forward mode AD we now create another execution trace <strong>for each input</strong> into our function. For this example let's take the input \( x_1 \) or the node that outputs \( v_a \). In this execution trace, we first define the derivative of \( v_a \), \( \dot{v_a} = 1\). (I'm using the small dot above v1 to denote its derivative with respect to x_1). Since all the other input's don't have a \( x_1 \) then they are set to 0. </p>
-<p>With all subsequent expressions we pass along the previously calculated derivatives. For each node we take the derivative with respect to its input, and to find the derivative w.r.t \( x_1 \) we use the previously calculated derivative. Below is the full trace for \( x_1 \)</p>
+<p>With all subsequent expressions we pass along the previously calculated derivatives. For each variable we take the derivative with respect to its input, and to find the derivative of the variable w.r.t \( x_1 \) we use the derivatives that have been already calculted       . Below is the full trace for \( x_1 \)</p>
 <ol>
-<li>\( \dot{v_a} = 1 \)</li>
+<li>\( \dot{v_a} = 1 \) </li>
 <li>\( \dot{v_b} = 0 \)</li>
 <li>\( v_1 = v_a / v_b\)
 <ul>
@@ -269,83 +269,42 @@ of the node above:</p>
 </li>
 </ol>
 <p>From this we can see from the execution trace where our derivatives come from and how calculating derivatives node by node help save some time.</p>
-<!-- ```rust -->
-<!-- ```rust
-#![allow(unused_variables)]
-extern crate autograd_rs;
-
-use autograd_rs::forward_mode::ForwardTensor;
-
-// this is an example function from the paper https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf
-// which is referenced in the book tutorial for forward AD.
-fn example_fn(x1 : ForwardTensor, x2 : ForwardTensor) -> ForwardTensor{ 
-
-    ((x1/x2).sin() + x1/x2 - (x2).exp()) * (x1/x2 - x2.exp())
-}
-
-fn main() { 
-    let mut x1 = ForwardTensor::new(1.5, 1.0, false);
-    let mut x2 = ForwardTensor::new(0.5, 0.0, false); 
-
-    let output = example_fn(x1, x2);
-
-    let step_size = 0.001;
-    let deriv_estimate = (example_fn(x1 + step_size, x2) - example_fn(x1, x2))/step_size;
-
-    println!("Value: {}, derivative w.r.t x1 {}", output.data, output.deriv);
-    println!("Derivative estimate: {}", deriv_estimate.data);
-
-    
-    x2.deriv = 1.0; 
-    x1.deriv = 0.0; 
-
-    let output_wrt_x2 = example_fn(x1, x2); 
-
-}
-
-
-```
- -->
-<!-- ``` -->
-<!-- ```rust
-#![allow(unused_variables)]
-extern crate autograd_rs;
-
-use autograd_rs::forward_mode::ForwardTensor;
-
-// this is an example function from the paper https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf
-// which is referenced in the book tutorial for forward AD.
-fn example_fn(x1 : ForwardTensor, x2 : ForwardTensor) -> ForwardTensor{ 
-
-    ((x1/x2).sin() + x1/x2 - (x2).exp()) * (x1/x2 - x2.exp())
-}
-
-fn main() { 
-    let mut x1 = ForwardTensor::new(1.5, 1.0, false);
-    let mut x2 = ForwardTensor::new(0.5, 0.0, false); 
-
-    let output = example_fn(x1, x2);
-
-    let step_size = 0.001;
-    let deriv_estimate = (example_fn(x1 + step_size, x2) - example_fn(x1, x2))/step_size;
-
-    println!("Value: {}, derivative w.r.t x1 {}", output.data, output.deriv);
-    println!("Derivative estimate: {}", deriv_estimate.data);
-
-    
-    x2.deriv = 1.0; 
-    x1.deriv = 0.0; 
-
-    let output_wrt_x2 = example_fn(x1, x2); 
-
-}
-
-
-```
- -->
 <h2 id="execution-graph-approach"><a class="header" href="#execution-graph-approach">Execution Graph Approach</a></h2>
+<p>For looking at the execution graph we will first look at how specific subsets of the graph works. Beginning at the input nodes or nodes who <strong>instantiate</strong>/create a computational graph.
+In forward AD, input nodes to a computational graph receive two things.</p>
+<ol>
+<li>Each nodes initial values</li>
+<li>Each nodes derivative with respect to one node's values. Generally One input node is set to 1 and all other's to 0.</li>
+</ol>
+<center><img src="learningByExample/images/forward_mode/Forward Mode X1-_Va Instantiation.png"></center>
+<p>In the example above, the graph is going to take the derivative of the example equation w.r.t \( x_1 \). \( {v_a}  \)  and \( {v_b}  \)  are instantiated with the values \( {x_1}  \)  and \( {x_2}  \)  respectively. With \( {v_a} \)  receiving a derivative value of 1 and  \( v_b \) receiving a derivative value of 0. </p>
+<p>When it comes to the outputs of each node</p>
+<ol>
+<li>They each output an output value \( v_a \) and \( v_b \)</li>
+<li>They each have an output <strong>derivative</strong> value \( \dot{v_a} \) and \( \dot{v_b} \)</li>
+</ol>
+<p>It may seem that this is overly complicating a simple calculation but looking at a subsequent child node
+in the graph helps us learn why one does this. Looking at the node for \( v_1 \) we see </p>
+<center><img src="learningByExample/images/forward_mode/Flow of Derivatives of V1.png"></center>
+<ol>
+<li>The inputs to \( v_1 \) are in terms of v1 and v2</li>
+<li>The derivative of \( v_1 \), \( \dot{v_1} \) , is written purely as a derivative based on the input derivatives and input values \( v_1 \) \( v_2 \) \( \dot{v_1} \)\( \dot{v_1} \)</li>
+<li>These derivatives could be with respect to any variable but the node does not need to know that</li>
+</ol>
+<p>Numbers 2 and 3 are the most powerful parts of forward AD. The node does not need to know &quot;what&quot; the input derivatives themselves mean, just their values and how to take the derivative of it's own operation via the chain rule. From there one can keep adding new nodes from the outputs of any previous nodes and build a graph which automatically propagates values and their derivatives. What these derivatives mean only matters when one first instantiates the first nodes and is left up to the user to decide.</p>
+<p>Creating a full computational graph of the examples in forward AD would look like the following.</p>
+<center><img src="learningByExample/images/forward_mode/Forward AD  Full Graph.png">Computational graph with forward AD derivative flow</center>
+<p>The derivatives &quot;flow&quot; forward along with the computation of the output y. By the time the output is calculated so is it's derivative with respect to one of the instantiated variables.</p>
 <h2 id="considerations-to-implementing-an-operation-node-for-ad"><a class="header" href="#considerations-to-implementing-an-operation-node-for-ad">Considerations to Implementing an Operation Node for AD</a></h2>
-<h2 id="further-reading-computing-directional-derivatices"><a class="header" href="#further-reading-computing-directional-derivatices">Further Reading: Computing Directional Derivatices</a></h2>
+<p>When implementing a forward AD compuation library one needs to keep the following in mind.</p>
+<ol>
+<li>Each node needs to know what operation it does</li>
+<li>Each node needs to know how to take the derivative along with the chain rule with respect to it's own operation. </li>
+</ol>
+<p>Forward AD lends itself to being implemented relatively well by a method called &quot;operator overloading&quot;</p>
+<h2 id="further-reading-computing-directional-derivatives"><a class="header" href="#further-reading-computing-directional-derivatives">Further Reading: Computing Directional Derivatives</a></h2>
+<p>What if our function outputs two variables? </p>
+<p>TODO</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="backward-ad"><a class="header" href="#backward-ad">Backward AD</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="sources-for-learning"><a class="header" href="#sources-for-learning">Sources for learning</a></h1>
 <p>This is a growing list of the sources I've been using to learn a bit about AD and how to implement it.</p>
@@ -355,6 +314,7 @@ fn main() {
 <p><a href="https://www.youtube.com/watch?v=wG_nF1awSSY">What is Automatic Differentiation?</a></p>
 <p><a href="https://www.youtube.com/watch?v=EEbnprb_YTU&amp;ab_channel=NathanSprague">Reverse Mode Automatic Differentiation</a></p>
 <p><a href="https://bilal2vec.github.io/blog/blog/2020/rust-ml-library/">L2: A Rust implementation of backwards automatic differentiation</a></p>
+<p><a href="https://blog.ezyang.com/2019/05/pytorch-internals/">Pytroch interals</a></p>
 <p><a href="https://towardsdatascience.com/build-your-own-automatic-differentiation-program-6ecd585eec2a">Build Your Own Automatic Differentiation Program</a></p>
 <p><a href="https://marksaroufim.medium.com/automatic-differentiation-step-by-step-24240f97a6e6">Automatic Differentiation Step by Step</a></p>
 <p><a href="https://dlsys.cs.washington.edu/pdf/lecture4.pdf">CSE599: Lecture 4: Backpropagation and Automatic Differentiation</a></p>

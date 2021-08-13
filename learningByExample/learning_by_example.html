@@ -84,7 +84,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Intro</a></li><li class="chapter-item expanded "><a href="../chapter1/chapter_1.html"><strong aria-hidden="true">2.</strong> TODO: What is Automatic Differentiation</a></li><li class="chapter-item expanded "><a href="../learningByExample/learning_by_example.html" class="active"><strong aria-hidden="true">3.</strong> Learning AD By Example</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../learningByExample/forward_ad.html"><strong aria-hidden="true">3.1.</strong> TODO: Forward Mode AD</a></li><li class="chapter-item expanded "><a href="../learningByExample/backward_ad.html"><strong aria-hidden="true">3.2.</strong> TODO: Backward Mode AD</a></li></ol></li><li class="chapter-item expanded "><a href="../sources.html"><strong aria-hidden="true">4.</strong> Sources</a></li></ol>            </div>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../intro.html"><strong aria-hidden="true">1.</strong> Intro</a></li><li class="chapter-item expanded "><a href="../chapter1/chapter_1.html"><strong aria-hidden="true">2.</strong> TODO: What is Automatic Differentiation</a></li><li class="chapter-item expanded "><a href="../learningByExample/learning_by_example.html" class="active"><strong aria-hidden="true">3.</strong> Learning AD By Example</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../learningByExample/forward_ad.html"><strong aria-hidden="true">3.1.</strong> Forward Mode AD</a></li><li class="chapter-item expanded "><a href="../learningByExample/backward_ad.html"><strong aria-hidden="true">3.2.</strong> TODO: Backward Mode AD</a></li></ol></li><li class="chapter-item expanded "><a href="../sources.html"><strong aria-hidden="true">4.</strong> Sources</a></li></ol>            </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
 
@@ -164,12 +164,12 @@ will clearly help with the intuition of what AD is trying to achieve.</p>
 <li>\( y = v_6 \)</li>
 </ol>
 <p><em>(Do note that the \( \times \) operator here means some sort of multiplication between scalars/matrices with other scalars/matrices. So no cross products)</em></p>
-<p>This list above is sometimes called an <strong>execution trace</strong> or a <strong>wengert list</strong> but the most important part is that it separates our function into a set of intermediate steps that makes it easier to reason about how to propagate derivatives. </p>
+<p>This list above is sometimes called an <strong>execution trace</strong> or a <strong>computational list</strong> but the most important part is that it separates our function into a set of intermediate steps that makes it easier to reason about how to propagate derivatives. </p>
 <p>I think this property is better exemplefied by the graph representation of an execution trace.</p>
-<center><img src="images/Example Execution Graph.png">Graph of Execution Trace</center>
+<center><img src="images/Example_Execution_Graph.png">Graph of Execution Trace</center>
 <p>To properly understand what this graph means we first must define what each node means.
-Each node in this graph primarily represents an <strong>operator</strong> of some sorts. Let's look at an example for node 5 to see what this means.</p>
-<center><img src="images/Sample Node V5.png">The node of the value V5 is the addition operator on two input variables</center>
+Each node in this graph primarily represents an <strong>operator</strong> of some sorts. Let's look at an example for node \( v_{4} \) to see what this means.</p>
+<center><img src="images/Sample_Node_ V5.png">The node of the value V5 is the addition operator on two input variables</center>
 <p>Each node in our graph is some sort of elementary operation. This includes operators like addition, multiplication, or functions like 
 trigonometric functions or exponential functions to name a few. A node takes an input depending on the type of function it is. In the case
 of the node above:</p>
