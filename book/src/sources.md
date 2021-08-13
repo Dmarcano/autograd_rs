@@ -14,6 +14,8 @@ This is a growing list of the sources I've been using to learn a bit about AD an
 
 [L2: A Rust implementation of backwards automatic differentiation](https://bilal2vec.github.io/blog/blog/2020/rust-ml-library/)
 
+[Pytroch interals](https://blog.ezyang.com/2019/05/pytorch-internals/)
+
 [Build Your Own Automatic Differentiation Program](https://towardsdatascience.com/build-your-own-automatic-differentiation-program-6ecd585eec2a)
 
 [Automatic Differentiation Step by Step](https://marksaroufim.medium.com/automatic-differentiation-step-by-step-24240f97a6e6)
