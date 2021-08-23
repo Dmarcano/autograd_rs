@@ -88,6 +88,26 @@ impl<T: Float> TryFrom<(Vec<usize>, Vec<T>)> for Tensor<T> {
     }
 }
 
+impl<T: Float> TryFrom<Vec<T>> for Tensor<T> {
+    type Error = TensorErr;
+
+    /// create a tensor from a vector in row-first order. That is a vector of length **N** will create a tensor of 
+    /// shape **(1, N)**
+    ///
+    /// ### Errors 
+    /// returns an error on given an empty vector
+    fn try_from(value: Vec<T>) -> Result<Self, Self::Error> {
+        let row_len = value.len();
+        if row_len < 1 { 
+            return Err(TensorErr::EmptyError);
+        }
+
+        let shape = [1 , row_len];
+        Tensor::new(value, &shape)
+    }
+}
+
+
 impl<T: Float> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
     type Error = TensorErr;
 
