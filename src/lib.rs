@@ -30,6 +30,8 @@ impl<T: Float> Tensor<T> {
     /// To create a 1 dimensional tensor you would use something such as
     ///
     ///  ```
+    ///     use autograd_rs::Tensor;
+    ///
     ///     let data = vec![1.0 , 2.0 , 3.0];
     ///     let shape : [usize ; 1] = [3];    
     ///     let tensor = Tensor::new(data, &shape).unwrap();
@@ -64,15 +66,18 @@ impl<T: Float> Tensor<T> {
 
 #[macro_export]
 /// Creates a tensor from the given data. Creates Tensors in a row-major order
-/// 
-/// 
-/// # Examples 
-/// 
+///
+///
+/// # Examples
+///
 /// ### 1-D Cases
 ///
 /// ```
-/// let tensor = tensor!(1.0, 2.0, 3.0); // A 1x3 Tensor 
-/// let tensor = tensor!(5.0); // A 1x1 Tensor 
+/// use std::convert::TryFrom; // the macro uses the std TryFrom trait
+/// use autograd_rs::{Tensor, tensor};
+///
+/// let tensor = tensor!(1.0, 2.0, 3.0); // A 1x3 Tensor
+/// let tensor = tensor!(5.0); // A 1x1 Tensor
 /// let tensor = tensor!(tensor!(2.0), tensor!(3.0), tensor!(4.0)); // A 3x1 Tensor
 ///
 /// ```
@@ -80,21 +85,25 @@ impl<T: Float> Tensor<T> {
 /// To create a standard 2-D tensor the following cas be done
 ///
 /// ```
+/// # use autograd_rs::{Tensor, tensor};
+/// # use std::convert::TryFrom;
 ///  let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(1.0, 2.0, 3.0)); // A 2x3 Tensor
 /// ```
 ///
 /// You can stack Tensors on top of one another as long as their row lengths match up
 ///
 /// ```
+/// # use autograd_rs::{Tensor, tensor};
+/// # use std::convert::TryFrom;
 /// let top = tensor!(tensor!(2.0, 3.0, 4.0), tensor!(5.0, 6.0, 7.0));
 /// let bottom = tensor!(8.0, 9.0, 10.0);
 /// let stacked = tensor!(top, bottom);
 /// ```
 /// # Panics
-/// 
-/// The macro panics on the following 
+///
+/// The macro panics on the following
 /// * Passed in any empty tensors
-/// * The tensor lengths do not match up when creating 2-D Tensors or stacking tensors 
+/// * The tensor lengths do not match up when creating 2-D Tensors or stacking tensors
 macro_rules! tensor {
     ( $( $x:expr ),* ) => {
         {
@@ -120,16 +129,16 @@ impl<T: Float> Clone for Tensor<T> {
 impl<T: Float> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     type Error = TensorErr;
 
-    /// tries to build a Tensor from a Vector of vectors. The inner vectors are treated in row order 
-    /// 
+    /// tries to build a Tensor from a Vector of vectors. The inner vectors are treated in row order
+    ///
     fn try_from(value: Vec<Vec<T>>) -> Result<Self, Self::Error> {
         let inner_tensors: Vec<Tensor<T>> = value
             .into_iter()
             .map(|vec| Tensor::try_from(vec).or_else(|_| return Err(TensorErr::InvalidParamsError)))
             .map(|val| val.unwrap())
             .collect();
-        
-            Tensor::try_from(inner_tensors)
+
+        Tensor::try_from(inner_tensors)
     }
 }
 
@@ -182,7 +191,11 @@ impl<T: Float> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
             }
         }
 
-        let shape = [value.len(), col_length];
+        // get the number of rows for each tensor to allow stacking of 2-D tensors
+        let num_rows = value
+            .iter()
+            .fold(0, |accum, tensor| accum + tensor.shape[0]);
+        let shape = [num_rows, col_length];
         let data: Vec<T> = value
             .iter()
             .flat_map(|tensor| tensor.data.iter())
@@ -197,11 +210,10 @@ impl<T: Float> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
 mod tests {
     use std::convert::TryFrom;
 
-    use crate::Tensor;
+    use crate::{tensor, Tensor};
 
     #[test]
     fn instance_test() {
-/// 
         let data = vec![1.0, 2.0, 3.0];
         let shape: [usize; 1] = [3];
 
@@ -224,23 +236,24 @@ mod tests {
 
     #[test]
     fn from_vec_test() {
-        let data = vec![1.0, 2.0, 3.0]; 
+        let data = vec![1.0, 2.0, 3.0];
         let tensor = Tensor::try_from(data.clone()).unwrap();
-
 
         assert_eq!(data[0], tensor.data[[0, 0]]);
         assert_eq!(data[1], tensor.data[[0, 1]]);
         assert_eq!(data[2], tensor.data[[0, 2]]);
-        
-        let data : Vec<f64> = vec![];
-        let _tensor_err = Tensor::try_from(data).expect_err("Expected empty vector to produce failed tensor conversion");
+        let empty: Vec<f64> = vec![];
+        let _tensor_err = Tensor::try_from(empty)
+            .expect_err("Expected empty vector to produce failed tensor conversion");
     }
 
     #[test]
     fn from_vec_tensor_test() {
-
-        let data = vec![ vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0] ];
-        let tensors = vec![ Tensor::try_from(data[0].clone()).unwrap(), Tensor::try_from(data[1].clone()).unwrap() ];
+        let data = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]];
+        let tensors = vec![
+            Tensor::try_from(data[0].clone()).unwrap(),
+            Tensor::try_from(data[1].clone()).unwrap(),
+        ];
 
         let stacked_tensor = Tensor::try_from(tensors).unwrap();
 
@@ -250,12 +263,11 @@ mod tests {
         assert_eq!(data[1][0], stacked_tensor.data[[1, 0]]);
         assert_eq!(data[1][1], stacked_tensor.data[[1, 1]]);
         assert_eq!(data[1][2], stacked_tensor.data[[1, 2]]);
-        
     }
 
     #[test]
     fn from_vec_vec_test() {
-        let data = vec![ vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0] ];
+        let data = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]];
         let tensor = Tensor::try_from(data.clone()).unwrap();
 
         assert_eq!(data[0][0], tensor.data[[0, 0]]);
@@ -265,8 +277,10 @@ mod tests {
         assert_eq!(data[1][1], tensor.data[[1, 1]]);
         assert_eq!(data[1][2], tensor.data[[1, 2]]);
 
-        let data = vec![ vec![1.0, 2.0, 3.0], vec![4.0] ];
-        let _tensor_err = Tensor::try_from(data.clone()).expect_err("Expected non symmetric vector of tensor to not succesfully convert to a tensor");
+        let data = vec![vec![1.0, 2.0, 3.0], vec![4.0]];
+        let _tensor_err = Tensor::try_from(data.clone()).expect_err(
+            "Expected non symmetric vector of tensor to not succesfully convert to a tensor",
+        );
     }
 
     #[test]
@@ -275,19 +289,18 @@ mod tests {
         let tensor_1 = tensor!(7.0);
         assert_eq!(7.0, tensor_1.data[[0, 0]]);
 
-        // test 1-D N dimensionality 
+        // test 1-D N dimensionality
         let tensor_1d = tensor!(1.0, 2.0, 3.0);
         assert_eq!(1.0, tensor_1d.data[[0, 0]]);
         assert_eq!(2.0, tensor_1d.data[[0, 1]]);
         assert_eq!(3.0, tensor_1d.data[[0, 2]]);
 
-        
         // column tensor test
         let col_tensor = tensor!(tensor!(10.0), tensor!(20.0));
         assert_eq!(10.0, col_tensor.data[[0, 0]]);
         assert_eq!(20.0, col_tensor.data[[1, 0]]);
 
-        // 2-D tensor test 
+        // 2-D tensor test
         let tensor_2d = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0));
 
         assert_eq!(1.0, tensor_2d.data[[0, 0]]);
@@ -300,6 +313,22 @@ mod tests {
         // testing what happens with deeply nested tensor operations
         let tensor = tensor!(tensor!(tensor!(10.0)));
         assert_eq!(10.0, tensor.data[[0, 0]]);
+    }
 
+    #[test]
+    fn stack_test() {
+        let top = tensor!(tensor!(2.0, 3.0, 4.0), tensor!(5.0, 6.0, 7.0));
+        let bottom = tensor!(8.0, 9.0, 10.0);
+        let stacked = tensor!(top, bottom);
+
+        assert_eq!(2.0, stacked.data[[0, 0]]);
+        assert_eq!(3.0, stacked.data[[0, 1]]);
+        assert_eq!(4.0, stacked.data[[0, 2]]);
+        assert_eq!(5.0, stacked.data[[1, 0]]);
+        assert_eq!(6.0, stacked.data[[1, 1]]);
+        assert_eq!(7.0, stacked.data[[1, 2]]);
+        assert_eq!(8.0, stacked.data[[2, 0]]);
+        assert_eq!(9.0, stacked.data[[2, 1]]);
+        assert_eq!(10.0, stacked.data[[2, 2]]);
     }
 }
