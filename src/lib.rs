@@ -1,3 +1,4 @@
+use core::cell::RefCell;
 use errors::TensorErr;
 use ndarray::{Array, Array2, ErrorKind, Ix2, ShapeError};
 use num_traits::Float;
@@ -11,12 +12,30 @@ mod math;
 /// of the underlying computation graph.
 #[derive(Debug, PartialEq)]
 pub struct Tensor<T: Float> {
-    // tensors do not mutate their internal data, rather they create new tensors from their data as input
-    // tensors that are instantiated from an operation on a "parent" tensor take a refernce to the parent by cloning it.
-    // using RC on a dynamic array makes it much less intensive to perform cloning operations
+    /// tensors do not mutate their internal data, rather they create new tensors from their data as input.
+    /// Tensors that are instantiated from an operation on a "parent" tensor take an immutable reference to the parent and use it's reference to
+    /// speedily calculate gradients
     pub data: Rc<Array<T, Ix2>>,
     pub shape: Rc<Vec<usize>>,
     tracked: bool,
+
+    // the left-hand-side (lhs), right-hand-side (rhs), and op
+    // data members correspond to Tensors that
+    // are created as a result of some sort of math operation between one or two parent tensors
+    // in a computation graph. A reference counted pointer keeps an owned reference to tensors
+    // that were used to create other tensors such that a computational graph does not need to be
+    // solely defined in one scope (due to rusts lifetime rules and generally to prevent dangling pointers)
+    lhs: Option<Rc<RefCell<Tensor<T>>>>,
+    rhs: Option<Rc<RefCell<Tensor<T>>>>,
+    op: Option<math::MathFn>,
+    // keeps track of gradients as they are passed in to the current tensor
+    grad: Option<Rc<RefCell<Tensor<T>>>>,
+    // keeps track of the number of dependencies/gradients that need to be sent to
+    // the current tensor before it gets to send it to it's own parent tensors.
+    // the definition of a Tensors full gradient or adjoint is the sum of all the gradient's
+    // of its children so a tensor cannot propagate it's gradient to it's lhs and rhs parents until
+    // its depedency count is 0.
+    deps: Rc<RefCell<usize>>,
 }
 
 impl<T: Float> Tensor<T> {
@@ -60,7 +79,66 @@ impl<T: Float> Tensor<T> {
             data: Rc::new(arr),
             shape: Rc::new(vec_shape.to_vec()),
             tracked: true,
+            lhs: None,
+            rhs: None,
+            op: None,
+            grad: None,
+            deps: Rc::new(RefCell::new(0)),
         })
+    }
+
+    fn with_parents(self, rhs: &Tensor<T>, lhs: Option<&Tensor<T>>) -> Self {
+        let parent = match lhs {
+            None => None,
+            Some(tensor) => Some(Rc::new(RefCell::new(tensor.clone()))),
+        };
+        Tensor {
+            data: self.data,
+            shape: self.shape,
+            tracked: self.tracked,
+            rhs: Some(Rc::new(RefCell::new(rhs.clone()))),
+            lhs: parent,
+            grad: self.grad,
+            op: self.op,
+            deps: self.deps,
+        }
+    }
+
+    /// consumes a Tensor and creates a new variant that is tracked.
+    /// Consumption is done such that other computation graphs that had
+    /// previously used the previous Tensor are not mutated themselves (causing a panic)
+    pub fn tracked(self) -> Self {
+        Tensor {
+            data: self.data,
+            shape: self.shape,
+            tracked: true,
+            rhs: self.rhs,
+            lhs: self.lhs,
+            grad: self.grad,
+            op: self.op,
+            deps: self.deps,
+        }
+    }
+
+    /// consumes a Tensor and creates a new variant that is untracked.
+    /// Consumption is done such that other computation graphs that had
+    /// previously used the previous Tensor are not mutated themselves (causing a panic)
+    pub fn untracked(self) -> Self {
+        Tensor {
+            data: self.data,
+            shape: self.shape,
+            tracked: false,
+            rhs: self.rhs,
+            lhs: self.lhs,
+            grad: self.grad,
+            op: self.op,
+            deps: self.deps,
+        }
+    }
+
+    /// Wether a Tensor is tracked such that it's gradients are calculated
+    pub fn is_tracked(&self) -> bool {
+        self.tracked
     }
 }
 
@@ -122,6 +200,11 @@ impl<T: Float> Clone for Tensor<T> {
             data: self.data.clone(),
             shape: self.shape.clone(),
             tracked: self.tracked,
+            rhs: self.rhs.clone(),
+            lhs: self.lhs.clone(),
+            op: self.op,
+            grad: self.grad.clone(),
+            deps: Rc::new(RefCell::new(0)),
         }
     }
 }
