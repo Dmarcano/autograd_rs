@@ -75,8 +75,16 @@ impl<T: Float> Clone for Tensor<T> {
 impl<T: Float> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     type Error = TensorErr;
 
+    /// tries to build a Tensor from a Vector of vectors. The inner vectors are treated in row order 
+    /// 
     fn try_from(value: Vec<Vec<T>>) -> Result<Self, Self::Error> {
-        todo!()
+        let inner_tensors: Vec<Tensor<T>> = value
+            .into_iter()
+            .map(|vec| Tensor::try_from(vec).or_else(|_| return Err(TensorErr::InvalidParamsError)))
+            .map(|val| val.unwrap())
+            .collect();
+        
+            Tensor::try_from(inner_tensors)
     }
 }
 
@@ -91,22 +99,21 @@ impl<T: Float> TryFrom<(Vec<usize>, Vec<T>)> for Tensor<T> {
 impl<T: Float> TryFrom<Vec<T>> for Tensor<T> {
     type Error = TensorErr;
 
-    /// create a tensor from a vector in row-first order. That is a vector of length **N** will create a tensor of 
+    /// create a tensor from a vector in row-first order. That is a vector of length **N** will create a tensor of
     /// shape **(1, N)**
     ///
-    /// ### Errors 
+    /// ### Errors
     /// returns an error on given an empty vector
     fn try_from(value: Vec<T>) -> Result<Self, Self::Error> {
         let row_len = value.len();
-        if row_len < 1 { 
+        if row_len < 1 {
             return Err(TensorErr::EmptyError);
         }
 
-        let shape = [1 , row_len];
+        let shape = [1, row_len];
         Tensor::new(value, &shape)
     }
 }
-
 
 impl<T: Float> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
     type Error = TensorErr;
@@ -130,7 +137,7 @@ impl<T: Float> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
             }
         }
 
-        let shape =[value.len(), col_length];
+        let shape = [value.len(), col_length];
         let data: Vec<T> = value
             .iter()
             .flat_map(|tensor| tensor.data.iter())
@@ -163,7 +170,19 @@ mod tests {
     }
 
     #[test]
-    fn from_vec_test() {}
+    fn from_vec_test() {
+        unimplemented!();
+    }
+
+    #[test]
+    fn from_vec_tensor_test() {
+        unimplemented!()
+    }
+
+    #[test]
+    fn from_vec_vec_test() {
+        unimplemented!();
+    }
 
     #[test]
     fn macro_test() {}
