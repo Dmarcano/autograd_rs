@@ -1,9 +1,14 @@
+// This part of the crate is primarily for implementing the basic mathematical and graph building operations of a Tensor.
+
 use ndarray::Array2;
-use std::ops::{Deref, Mul};
+use std::ops::{Add, AddAssign, Deref, Div, Mul, Sub};
 
 // This module contains all the basic mathematical functions for a tensor.
 use crate::{errors::TensorErr, Tensor};
 use num_traits::Float;
+
+use auto_ops::*;
+
 
 /// A set of possible functions between two tensors.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -47,7 +52,7 @@ impl<T: 'static + Float> Tensor<T> {
         let child = Tensor::from_op_output(output).with_op(op);
         
         if tracked { 
-            return Ok(child.tracked())
+            return Ok(child.tracked().with_parents(self, other))
         }
         else { 
             Ok(child)
@@ -62,7 +67,7 @@ impl<T: 'static + Float> Tensor<T> {
 
     fn increment_deps(&self) {
         if self.tracked {
-            self.deps.set(self.deps.get() + 1);
+             self.deps.borrow_mut().add_assign(1);            
         };
     }
 
@@ -89,15 +94,106 @@ impl<T: 'static + Float> Tensor<T> {
     fn backward() {}
 }
 
+// ======================= Borrowed Implementations
+
+impl<T : Float + 'static> Add for &Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        self.operation(Some(rhs), MathFn::TensorFns(BinaryFn::Add)).unwrap()
+    }
+}
+
+impl<T : Float + 'static> Sub for &Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.operation(Some(rhs), MathFn::TensorFns(BinaryFn::Sub)).unwrap()
+
+    }
+}
+
+impl<T : Float + 'static> Mul for &Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        self.operation(Some(rhs), MathFn::TensorFns(BinaryFn::Mul)).unwrap()
+
+    }
+}
+
+impl<T : Float + 'static> Div for &Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        self.operation(Some(rhs), MathFn::TensorFns(BinaryFn::Div)).unwrap()
+        
+    }
+}
+
+// ======================== Owned Implementations
+
+impl<T : Float + 'static> Add for Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        self.operation(Some(&rhs), MathFn::TensorFns(BinaryFn::Add)).unwrap()
+
+    }
+}
+
+impl<T : Float + 'static> Sub for Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.operation(Some(&rhs), MathFn::TensorFns(BinaryFn::Sub)).unwrap()
+
+    }
+}
+
+impl<T : Float + 'static> Mul for Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        self.operation(Some(&rhs), MathFn::TensorFns(BinaryFn::Mul)).unwrap()
+
+    }
+}
+
+impl<T : Float + 'static> Div for Tensor<T>{
+    type Output = Tensor<T>;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        self.operation(Some(&rhs), MathFn::TensorFns(BinaryFn::Div)).unwrap()
+        
+    }
+}
+
+
+
+
+
 #[cfg(test)]
 mod tests {
+
+    use crate::*;
+
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
     }
 
     #[test]
-    fn add_test() {}
+    fn add_test() {
+        let tensor1 = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let tensor2 = tensor!(tensor!(4.0, 5.0, 6.0), tensor!(7.0, 8.0, 9.0)).tracked();
+
+        let out = &tensor1 + &tensor2;
+
+
+        assert_eq!(*out.rhs.unwrap().borrow(), tensor1);
+        assert_eq!(*out.lhs.unwrap().borrow(), tensor2);
+    }
 
     #[test]
     fn sub_test() {}

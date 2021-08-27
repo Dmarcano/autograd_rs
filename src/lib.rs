@@ -36,7 +36,7 @@ pub struct Tensor<T: Float> {
     // the definition of a Tensors full gradient or adjoint is the sum of all the gradient's
     // of its children so a tensor cannot propagate it's gradient to it's lhs and rhs parents until
     // its depedency count is 0.
-    deps: Rc<Cell<usize>>,
+    deps: Rc<RefCell<usize>>,
 }
 
 impl<T: Float> Tensor<T> {
@@ -84,12 +84,12 @@ impl<T: Float> Tensor<T> {
             rhs: None,
             op: None,
             grad: None,
-            deps: Rc::new(Cell::new(0)),
+            deps: Rc::new(RefCell::new(0)),
         })
     }
 
-    fn with_parents(self, rhs: &Tensor<T>, lhs: Option<&Tensor<T>>) -> Self {
-        let parent = match lhs {
+    fn with_parents(self, lhs: &Tensor<T>, rhs: Option<&Tensor<T>>) -> Self {
+        let parent = match rhs {
             None => None,
             Some(tensor) => Some(Rc::new(RefCell::new(tensor.clone()))),
         };
@@ -97,7 +97,7 @@ impl<T: Float> Tensor<T> {
             data: self.data,
             shape: self.shape,
             tracked: self.tracked,
-            rhs: Some(Rc::new(RefCell::new(rhs.clone()))),
+            rhs: Some(Rc::new(RefCell::new(lhs.clone()))),
             lhs: parent,
             grad: self.grad,
             op: self.op,
@@ -219,7 +219,7 @@ impl<T: Float> Clone for Tensor<T> {
             lhs: self.lhs.clone(),
             op: self.op,
             grad: self.grad.clone(),
-            deps: Rc::new(Cell::new(0)),
+            deps: self.deps.clone(),
         }
     }
 }
