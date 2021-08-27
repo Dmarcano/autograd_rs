@@ -31,12 +31,39 @@ impl<T: 'static + Float> Tensor<T> {
         // 1 perform the operation on the tensor to get it's data
         let output = match op {
             MathFn::TensorFns(func) => self.binary_op(other.unwrap(), func),
-        };
+        }?;
 
         // 2 update the dependencies of tensors if they are tracked
+        self.increment_deps();
+        let tracked = match other {
+            None => self.is_tracked(),
+            Some(tensor) => {
+                tensor.increment_deps();
+                self.is_tracked() || tensor.is_tracked()
+            }
+        };
 
         // 3 create a new child tensor with the current parent tensor(s) as lhs and rhs if tracking is being used
-        unimplemented!()
+        let child = Tensor::from_op_output(output).with_op(op);
+        
+        if tracked { 
+            return Ok(child.tracked())
+        }
+        else { 
+            Ok(child)
+        }
+    }
+
+    fn from_op_output(output: Array2<T>) -> Tensor<T>{ 
+        let shape = output.shape().to_vec();
+        let data = output.into_raw_vec();
+        Tensor::new(data, &shape).unwrap()
+    }
+
+    fn increment_deps(&self) {
+        if self.tracked {
+            self.deps.set(self.deps.get() + 1);
+        };
     }
 
     fn unary_op(&self, op: MathFn) -> Result<Array2<T>, TensorErr> {

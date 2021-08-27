@@ -1,3 +1,4 @@
+use core::cell::Cell;
 use core::cell::RefCell;
 use errors::TensorErr;
 use ndarray::{Array, Array2, ErrorKind, Ix2, ShapeError};
@@ -35,7 +36,7 @@ pub struct Tensor<T: Float> {
     // the definition of a Tensors full gradient or adjoint is the sum of all the gradient's
     // of its children so a tensor cannot propagate it's gradient to it's lhs and rhs parents until
     // its depedency count is 0.
-    deps: Rc<RefCell<usize>>,
+    deps: Rc<Cell<usize>>,
 }
 
 impl<T: Float> Tensor<T> {
@@ -83,7 +84,7 @@ impl<T: Float> Tensor<T> {
             rhs: None,
             op: None,
             grad: None,
-            deps: Rc::new(RefCell::new(0)),
+            deps: Rc::new(Cell::new(0)),
         })
     }
 
@@ -139,6 +140,20 @@ impl<T: Float> Tensor<T> {
     /// Wether a Tensor is tracked such that it's gradients are calculated
     pub fn is_tracked(&self) -> bool {
         self.tracked
+    }
+
+    /// Stores a function that was used to create a Specific tensor
+    pub(crate) fn with_op(self, op: math::MathFn) -> Self {
+        Tensor {
+            data: self.data,
+            shape: self.shape,
+            tracked: false,
+            rhs: self.rhs,
+            lhs: self.lhs,
+            grad: self.grad,
+            op: Some(op),
+            deps: self.deps,
+        }
     }
 }
 
@@ -204,7 +219,7 @@ impl<T: Float> Clone for Tensor<T> {
             lhs: self.lhs.clone(),
             op: self.op,
             grad: self.grad.clone(),
-            deps: Rc::new(RefCell::new(0)),
+            deps: Rc::new(Cell::new(0)),
         }
     }
 }
