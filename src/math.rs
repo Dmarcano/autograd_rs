@@ -177,6 +177,8 @@ impl<T : Float + 'static> Div for Tensor<T>{
 mod tests {
 
     use crate::*;
+    use crate::math::{BinaryFn, MathFn};
+    // use crate::{self::*, math::{BinaryFn, MathFn}};
 
     #[test]
     fn it_works() {
@@ -191,16 +193,81 @@ mod tests {
         let out = &tensor1 + &tensor2;
 
 
-        assert_eq!(*out.rhs.unwrap().borrow(), tensor1);
-        assert_eq!(*out.lhs.unwrap().borrow(), tensor2);
+        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor2);
+
+        assert_eq!(MathFn::TensorFns(BinaryFn::Add) ,out.op.unwrap());
+
+        assert_eq!(1.0 + 4.0, out.data[[0,0]]);
+        assert_eq!(2.0 + 5.0, out.data[[0,1]]);
+        assert_eq!(3.0 + 6.0, out.data[[0,2]]);
+        assert_eq!(7.0 + 4.0, out.data[[1,0]]);
+        assert_eq!(5.0 + 8.0, out.data[[1,1]]);
+        assert_eq!(6.0 + 9.0, out.data[[1,2]]);
     }
 
     #[test]
-    fn sub_test() {}
+    fn sub_test() {
+        let tensor1 = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let tensor2 = tensor!(tensor!(4.0, 5.0, 6.0), tensor!(7.0, 8.0, 9.0)).tracked();
+
+        let out = &tensor1 - &tensor2;
+
+
+        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor2);
+
+        assert_eq!(MathFn::TensorFns(BinaryFn::Sub) ,out.op.unwrap());
+
+        assert_eq!(1.0 - 4.0, out.data[[0,0]]);
+        assert_eq!(2.0 - 5.0, out.data[[0,1]]);
+        assert_eq!(3.0 - 6.0, out.data[[0,2]]);
+        assert_eq!(4.0 - 7.0, out.data[[1,0]]);
+        assert_eq!(5.0 - 8.0, out.data[[1,1]]);
+        assert_eq!(6.0 - 9.0, out.data[[1,2]]);
+    }
 
     #[test]
-    fn mul_test() {}
+    fn mul_test() {
+        let tensor1 = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let tensor2 = tensor!(tensor!(4.0, 5.0, 6.0), tensor!(7.0, 8.0, 9.0)).tracked();
+
+        let out = &tensor1 * &tensor2;
+
+
+        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor2);
+
+        assert_eq!(MathFn::TensorFns(BinaryFn::Mul) ,out.op.unwrap());
+
+        assert_eq!(1.0 * 4.0, out.data[[0,0]]);
+        assert_eq!(2.0 * 5.0, out.data[[0,1]]);
+        assert_eq!(3.0 * 6.0, out.data[[0,2]]);
+        assert_eq!(4.0 * 7.0, out.data[[1,0]]);
+        assert_eq!(5.0 * 8.0, out.data[[1,1]]);
+        assert_eq!(6.0 * 9.0, out.data[[1,2]]);
+    }
 
     #[test]
-    fn div_test() {}
+    fn div_test() {
+
+        let tensor1 = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let tensor2 = tensor!(tensor!(4.0, 5.0, 6.0), tensor!(7.0, 8.0, 9.0)).tracked();
+
+        let out = &tensor1 / &tensor2;
+
+
+        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor2);
+
+        assert_eq!(MathFn::TensorFns(BinaryFn::Div) ,out.op.unwrap());
+
+        assert_eq!(1.0 / 4.0, out.data[[0,0]]);
+        assert_eq!(2.0 / 5.0, out.data[[0,1]]);
+        assert_eq!(3.0 / 6.0, out.data[[0,2]]);
+        assert_eq!(4.0 / 7.0, out.data[[1,0]]);
+        assert_eq!(5.0 / 8.0, out.data[[1,1]]);
+        assert_eq!(6.0 / 9.0, out.data[[1,2]]);
+
+    }
 }
