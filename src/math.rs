@@ -2,12 +2,8 @@
 
 use ndarray::Array2;
 use std::ops::{Add, AddAssign, Deref, Div, Mul, Sub};
-
-// This module contains all the basic mathematical functions for a tensor.
 use crate::{errors::TensorErr, Tensor};
 use num_traits::Float;
-
-use auto_ops::*;
 
 
 /// A set of possible functions between two tensors.
@@ -19,12 +15,23 @@ pub enum BinaryFn {
     Div,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum UnaryFn { 
+    Sin, 
+    Cos,
+    Pow, 
+    Exp, 
+    Ln,
+    Log, 
+}
+
 /// The set of math operations that can be done to a Tensor. Can
 /// involve either a singular tensor serving as the left-hand-side(lhs)
 /// or two tensors serving as the left and right hand sides each (lhs, rhs)
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum MathFn {
     TensorFns(BinaryFn),
+    UnaryFn(UnaryFn)
 }
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
@@ -36,6 +43,7 @@ impl<T: 'static + Float> Tensor<T> {
         // 1 perform the operation on the tensor to get it's data
         let output = match op {
             MathFn::TensorFns(func) => self.binary_op(other.unwrap(), func),
+            MathFn::UnaryFn(func) => self.unary_op(func)
         }?;
 
         // 2 update the dependencies of tensors if they are tracked
@@ -71,7 +79,7 @@ impl<T: 'static + Float> Tensor<T> {
         };
     }
 
-    fn unary_op(&self, op: MathFn) -> Result<Array2<T>, TensorErr> {
+    fn unary_op(&self, op: UnaryFn) -> Result<Array2<T>, TensorErr> {
         unimplemented!()
     }
 
@@ -85,6 +93,22 @@ impl<T: 'static + Float> Tensor<T> {
         };
 
         Ok(output)
+    }
+
+    pub fn sin(&self) { 
+
+    }
+
+    pub fn cos(&self) { 
+
+    }
+
+    pub fn exp(&self) {
+
+    }
+
+    pub fn pow(&self) {
+
     }
 
     // sends the gradient of a Tensor to it's parents
