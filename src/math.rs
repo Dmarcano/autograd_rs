@@ -3,7 +3,7 @@
 use crate::{errors::TensorErr, Tensor};
 use ndarray::Array2;
 use num_traits::Float;
-use std::ops::{Add, AddAssign, Deref, Div, Mul, Sub};
+use std::ops::{Add, Deref, Div, Mul, Sub};
 
 /// A set of possible functions between two tensors.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -14,29 +14,40 @@ pub enum BinaryFn {
     Div,
 }
 
+/// The set of functions that can be performed on a Tensor
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum UnaryFn {
+pub enum UnaryFn<T: Float + 'static> {
     Sin,
     Cos,
-    Pow,
+    Pow(T),
     Exp,
     Ln,
-    Log,
+    Log(T),
 }
+
 
 /// The set of math operations that can be done to a Tensor. Can
 /// involve either a singular tensor serving as the left-hand-side(lhs)
 /// or two tensors serving as the left and right hand sides each (lhs, rhs)
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum MathFn {
+pub enum MathFn<T: Float + 'static> {
     TensorFns(BinaryFn),
-    UnaryFn(UnaryFn),
+    UnaryFn(UnaryFn::<T>),
 }
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
 impl<T: 'static + Float> Tensor<T> {
 
-    pub(crate) fn unary_op(&self, op: UnaryFn) -> Result<Array2<T>, TensorErr> {
+    pub(crate) fn unary_op(&self, op: UnaryFn<T>) -> Result<Array2<T>, TensorErr> {
+
+        let output = match op { 
+            Sin => self.data.map(|val| val.sin()),
+            Cos => self.data.map(|val| val.cos()),
+            Pow => todo!(),
+            Exp => self.data.map(|val| val.exp()),
+            Ln => self.data.map(|val| val.ln()),
+            Log => todo!()
+        };
         unimplemented!()
     }
 
@@ -52,13 +63,23 @@ impl<T: 'static + Float> Tensor<T> {
         Ok(output)
     }
 
-    pub fn sin(&self) {}
+    /// computes the sin of the Tensor (in radians)
+    pub fn sin(&self) -> Tensor<T>{
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Sin::<T>)).unwrap()
+    }
 
-    pub fn cos(&self) {}
+    pub fn cos(&self) -> Tensor<T>{
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Cos::<T>)).unwrap()
+    }
 
-    pub fn exp(&self) {}
+    pub fn exp(&self) -> Tensor<T>{
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Exp::<T>)).unwrap()
+    }
 
-    pub fn pow(&self) {}
+    pub fn pow(&self) -> Tensor<T>{
+        unimplemented!()
+        // self.operation(None, MathFn::UnaryFn(UnaryFn::Pow::<T>)).unwrap()
+    }
 
 }
 

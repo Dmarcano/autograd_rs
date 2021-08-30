@@ -13,7 +13,7 @@ mod math;
 /// A Tensor is the most basic data type in the automatic differentiation engine. Performs many basic mathematic functions and keeps track
 /// of the underlying computation graph.
 #[derive(Debug, PartialEq)]
-pub struct Tensor<T: Float> {
+pub struct Tensor<T: Float + 'static> {
     /// tensors do not mutate their internal data, rather they create new tensors from their data as input.
     /// Tensors that are instantiated from an operation on a "parent" tensor take an immutable reference to the parent and use it's reference to
     /// speedily calculate gradients
@@ -29,7 +29,7 @@ pub struct Tensor<T: Float> {
     // solely defined in one scope (due to rusts lifetime rules and generally to prevent dangling pointers)
     lhs: Option<Rc<RefCell<Tensor<T>>>>,
     rhs: Option<Rc<RefCell<Tensor<T>>>>,
-    op: Option<math::MathFn>,
+    op: Option<math::MathFn<T>>,
     // keeps track of gradients as they are passed in to the current tensor
     grad: Option<Rc<RefCell<Tensor<T>>>>,
     // keeps track of the number of dependencies/gradients that need to be sent to
@@ -144,7 +144,7 @@ impl<T: Float> Tensor<T> {
     }
 
     /// Stores a function that was used to create a Specific tensor
-    pub(crate) fn with_op(self, op: math::MathFn) -> Self {
+    pub(crate) fn with_op(self, op: math::MathFn<T>) -> Self {
         Tensor {
             data: self.data,
             shape: self.shape,

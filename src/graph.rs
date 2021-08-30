@@ -15,7 +15,7 @@ impl<T: Float + 'static> Tensor<T> {
     /// the general-operation function performs the necessary book-keeping before and after an operation to be used for a backwards pass.
     /// generally this involves using the given operation to save as the operation that will create the next subsequent tensor and
     /// also providing references to the parent tensors
-    pub(crate) fn operation(&self, other: Option<&Tensor<T>>, op: MathFn) -> Result<Tensor<T>, TensorErr> {
+    pub(crate) fn operation(&self, other: Option<&Tensor<T>>, op: MathFn<T>) -> Result<Tensor<T>, TensorErr> {
         // 1 perform the operation on the tensor to get it's data
         let output = match op {
             MathFn::TensorFns(func) => self.binary_op(other.unwrap(), func),
