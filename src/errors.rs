@@ -1,7 +1,5 @@
 use crate::Tensor;
 use ndarray::ShapeError;
-use std::error;
-use std::fmt;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]

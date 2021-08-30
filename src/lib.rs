@@ -1,4 +1,3 @@
-use core::cell::Cell;
 use core::cell::RefCell;
 use errors::TensorErr;
 use ndarray::{Array, Array2, ErrorKind, Ix2, ShapeError};
