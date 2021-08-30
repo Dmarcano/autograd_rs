@@ -7,6 +7,7 @@ use std::{convert::TryFrom, rc::Rc};
 
 mod errors;
 pub mod forward_mode;
+mod graph;
 mod math;
 
 /// A Tensor is the most basic data type in the automatic differentiation engine. Performs many basic mathematic functions and keeps track
