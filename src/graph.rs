@@ -1,21 +1,20 @@
 //! This module is mainly concerned with creating the computation graph of Tensor operations.
 //!
 
-use crate::{
-    math::{MathFn},
-    Tensor, TensorErr,
-};
-use num_traits::Float;
+use crate::{math::MathFn, Tensor, TensorErr};
 use ndarray::Array2;
+use num_traits::Float;
 use std::ops::AddAssign;
 
-
-impl<T: Float + 'static> Tensor<T> { 
-
+impl<T: Float + 'static> Tensor<T> {
     /// the general-operation function performs the necessary book-keeping before and after an operation to be used for a backwards pass.
     /// generally this involves using the given operation to save as the operation that will create the next subsequent tensor and
     /// also providing references to the parent tensors
-    pub(crate) fn operation(&self, other: Option<&Tensor<T>>, op: MathFn<T>) -> Result<Tensor<T>, TensorErr> {
+    pub(crate) fn operation(
+        &self,
+        other: Option<&Tensor<T>>,
+        op: MathFn<T>,
+    ) -> Result<Tensor<T>, TensorErr> {
         // 1 perform the operation on the tensor to get it's data
         let output = match op {
             MathFn::TensorFns(func) => self.binary_op(other.unwrap(), func),
@@ -54,11 +53,9 @@ impl<T: Float + 'static> Tensor<T> {
         };
     }
 
+    // sends the gradient of a Tensor to it's parents
+    fn send_grad(&self) {}
 
-        // sends the gradient of a Tensor to it's parents
-        fn send_grad(&self) {}
-
-        // computes the backwards pass for automatic differentiation
-        fn backward() {}
-
+    // computes the backwards pass for automatic differentiation
+    fn backward() {}
 }

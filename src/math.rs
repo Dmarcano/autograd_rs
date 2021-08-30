@@ -12,6 +12,7 @@ pub enum BinaryFn {
     Mul,
     Sub,
     Div,
+    MatMul,
 }
 
 /// The set of functions that can be performed on a Tensor
@@ -19,12 +20,11 @@ pub enum BinaryFn {
 pub enum UnaryFn<T: Float + 'static> {
     Sin,
     Cos,
-    Pow(T),
+    PowF(T),
     Exp,
     Ln,
     Log(T),
 }
-
 
 /// The set of math operations that can be done to a Tensor. Can
 /// involve either a singular tensor serving as the left-hand-side(lhs)
@@ -32,55 +32,80 @@ pub enum UnaryFn<T: Float + 'static> {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum MathFn<T: Float + 'static> {
     TensorFns(BinaryFn),
-    UnaryFn(UnaryFn::<T>),
+    UnaryFn(UnaryFn<T>),
 }
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
 impl<T: 'static + Float> Tensor<T> {
-
     pub(crate) fn unary_op(&self, op: UnaryFn<T>) -> Result<Array2<T>, TensorErr> {
-
-        let output = match op { 
-            Sin => self.data.map(|val| val.sin()),
-            Cos => self.data.map(|val| val.cos()),
-            Pow => todo!(),
-            Exp => self.data.map(|val| val.exp()),
-            Ln => self.data.map(|val| val.ln()),
-            Log => todo!()
+        let output = match op {
+            UnaryFn::Sin => self.data.map(|val| val.sin()),
+            UnaryFn::Cos => self.data.map(|val| val.cos()),
+            UnaryFn::Exp => self.data.map(|val| val.exp()),
+            UnaryFn::Ln => self.data.map(|val| val.ln()),
+            UnaryFn::Log(base) => self.data.map(|val| val.log(base)),
+            UnaryFn::PowF(base) => self.data.map(|val| val.powf(base)),
         };
-        unimplemented!()
+
+        Ok(output)
     }
 
-    pub(crate) fn binary_op(&self, other: &Tensor<T>, op: BinaryFn) -> Result<Array2<T>, TensorErr> {
+    pub(crate) fn binary_op(
+        &self,
+        other: &Tensor<T>,
+        op: BinaryFn,
+    ) -> Result<Array2<T>, TensorErr> {
         // TODO check if the tensors are broadcastable
         let output = match op {
             BinaryFn::Add => self.data.deref() + other.data.deref(),
             BinaryFn::Mul => self.data.deref() * other.data.deref(),
             BinaryFn::Sub => self.data.deref() - other.data.deref(),
             BinaryFn::Div => self.data.deref() / other.data.deref(),
+            BinaryFn::MatMul => todo!(),
         };
 
         Ok(output)
     }
 
-    /// computes the sin of the Tensor (in radians)
-    pub fn sin(&self) -> Tensor<T>{
-        self.operation(None, MathFn::UnaryFn(UnaryFn::Sin::<T>)).unwrap()
+    /// computes the sin of every element of the Tensor (in radians)
+    pub fn sin(&self) -> Tensor<T> {
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Sin::<T>))
+            .unwrap()
     }
 
-    pub fn cos(&self) -> Tensor<T>{
-        self.operation(None, MathFn::UnaryFn(UnaryFn::Cos::<T>)).unwrap()
+    /// computes the cos of every element of the Tensor (in radians)
+    pub fn cos(&self) -> Tensor<T> {
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Cos::<T>))
+            .unwrap()
     }
 
-    pub fn exp(&self) -> Tensor<T>{
-        self.operation(None, MathFn::UnaryFn(UnaryFn::Exp::<T>)).unwrap()
+    /// takes every element in a Tensor and raises by e
+    pub fn exp(&self) -> Tensor<T> {
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Exp::<T>))
+            .unwrap()
     }
 
-    pub fn pow(&self) -> Tensor<T>{
-        unimplemented!()
-        // self.operation(None, MathFn::UnaryFn(UnaryFn::Pow::<T>)).unwrap()
+    /// Raises every element in a tensor and raises it by a Floating point number
+    pub fn powf(&self, base: T) -> Tensor<T> {
+        self.operation(None, MathFn::UnaryFn(UnaryFn::PowF(base)))
+            .unwrap()
     }
 
+    /// takes the log of a given base of every element in a tensor
+    pub fn log(&self, base: T) -> Tensor<T> {
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Log(base)))
+            .unwrap()
+    }
+
+    /// takes the natural log of a given base of every element in a tensor
+    pub fn ln(&self) -> Tensor<T> {
+        self.operation(None, MathFn::UnaryFn(UnaryFn::Ln)).unwrap()
+    }
+
+    /// Takes the matrix product of two 2-Dimensional Tensors
+    pub fn dot(&self, other: &Tensor<T>) -> Result<Tensor<T>, TensorErr> {
+        self.operation(Some(other), MathFn::TensorFns(BinaryFn::MatMul))
+    }
 }
 
 // ======================= Borrowed Implementations
@@ -164,12 +189,6 @@ mod tests {
 
     use crate::math::{BinaryFn, MathFn};
     use crate::*;
-    // use crate::{self::*, math::{BinaryFn, MathFn}};
-
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
 
     #[test]
     fn add_test() {
