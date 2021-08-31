@@ -54,9 +54,7 @@ impl<T: Float + 'static> Tensor<T> {
     }
 
     // sends the gradient of a Tensor to it's parents
-    fn send_grad(&self) {
-        
-    }
+    fn send_grad(&self) {}
 
     /// computes the backwards pass for Tensor gradient calculation
     pub fn backward(&self) {

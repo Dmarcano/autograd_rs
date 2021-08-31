@@ -187,7 +187,7 @@ impl<T: Float + 'static> Div for Tensor<T> {
 #[cfg(test)]
 mod tests {
 
-    use crate::math::{BinaryFn, MathFn};
+    use crate::math::{BinaryFn, MathFn, UnaryFn};
     use crate::*;
 
     #[test]
@@ -268,5 +268,149 @@ mod tests {
         assert_eq!(4.0 / 7.0, out.data[[1, 0]]);
         assert_eq!(5.0 / 8.0, out.data[[1, 1]]);
         assert_eq!(6.0 / 9.0, out.data[[1, 2]]);
+    }
+
+    #[test]
+    fn sin_test() {
+        let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let output = tensor.sin();
+
+        assert_eq!(MathFn::UnaryFn(UnaryFn::Sin), *output.op.as_ref().unwrap());
+
+        let expected: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            .iter()
+            .map(|val| val.sin())
+            .collect();
+
+        output
+            .data
+            .clone()
+            .iter()
+            .zip(expected.iter())
+            .for_each(|(lhs, rhs)| {
+                let abs_diff = (lhs - rhs).abs();
+                assert!(abs_diff < 1e-10)
+            });
+    }
+
+    #[test]
+    fn cos_test() {
+        let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let output = tensor.cos();
+
+        assert_eq!(MathFn::UnaryFn(UnaryFn::Cos), *output.op.as_ref().unwrap());
+
+        let expected: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            .iter()
+            .map(|val| val.cos())
+            .collect();
+
+        output
+            .data
+            .clone()
+            .iter()
+            .zip(expected.iter())
+            .for_each(|(lhs, rhs)| {
+                let abs_diff = (lhs - rhs).abs();
+                assert!(abs_diff < 1e-10)
+            });
+    }
+
+    #[test]
+    fn exp_test() {
+        let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let output = tensor.exp();
+
+        assert_eq!(MathFn::UnaryFn(UnaryFn::Exp), *output.op.as_ref().unwrap());
+
+        let expected: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            .iter()
+            .map(|val| val.exp())
+            .collect();
+
+        output
+            .data
+            .clone()
+            .iter()
+            .zip(expected.iter())
+            .for_each(|(lhs, rhs)| {
+                let abs_diff = (lhs - rhs).abs();
+                assert!(abs_diff < 1e-10)
+            });
+    }
+
+    #[test]
+    fn log_test() {
+        let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let output = tensor.log(2.0);
+
+        assert_eq!(
+            MathFn::UnaryFn(UnaryFn::Log(2.0)),
+            *output.op.as_ref().unwrap()
+        );
+
+        let expected: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            .iter()
+            .map(|val| val.log(2.0))
+            .collect();
+
+        output
+            .data
+            .clone()
+            .iter()
+            .zip(expected.iter())
+            .for_each(|(lhs, rhs)| {
+                let abs_diff = (lhs - rhs).abs();
+                assert!(abs_diff < 1e-10)
+            });
+    }
+
+    #[test]
+    fn ln_test() {
+        let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let output = tensor.ln();
+
+        assert_eq!(MathFn::UnaryFn(UnaryFn::Ln), *output.op.as_ref().unwrap());
+
+        let expected: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            .iter()
+            .map(|val| val.ln())
+            .collect();
+
+        output
+            .data
+            .clone()
+            .iter()
+            .zip(expected.iter())
+            .for_each(|(lhs, rhs)| {
+                let abs_diff = (lhs - rhs).abs();
+                assert!(abs_diff < 1e-10)
+            });
+    }
+
+    #[test]
+    fn powf_test() {
+        let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let output = tensor.powf(2.0);
+
+        assert_eq!(
+            MathFn::UnaryFn(UnaryFn::PowF(2.0)),
+            *output.op.as_ref().unwrap()
+        );
+
+        let expected: Vec<f64> = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+            .iter()
+            .map(|val| val.powf(2.0))
+            .collect();
+
+        output
+            .data
+            .clone()
+            .iter()
+            .zip(expected.iter())
+            .for_each(|(lhs, rhs)| {
+                let abs_diff = (lhs - rhs).abs();
+                assert!(abs_diff < 1e-10)
+            });
     }
 }
