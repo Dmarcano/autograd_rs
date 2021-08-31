@@ -13,7 +13,10 @@ mod math;
 /// of the underlying computation graph.
 #[derive(Debug, PartialEq)]
 pub struct Tensor<T: Float + 'static> {
-    /// tensors do not mutate their internal data, rather they create new tensors from their data as input.
+    /// ND array backing the Tensor Data.
+    ///
+    /// ### Note on RC
+    /// Tensors do not mutate their internal data, rather they create new tensors from their data as input.
     /// Tensors that are instantiated from an operation on a "parent" tensor take an immutable reference to the parent and use it's reference to
     /// speedily calculate gradients
     pub data: Rc<Array<T, Ix2>>,
