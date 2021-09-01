@@ -26,6 +26,13 @@ pub enum UnaryFn<T: Float + 'static> {
     Log(T),
 }
 
+/// A struct that holds the gradient with respect to the parents of a tensor
+#[derive(Debug, PartialEq)]
+pub(crate) struct TensorGrad<T : Float + 'static> { 
+    pub lhs : Tensor<T>, 
+    pub rhs : Option<Tensor<T>>
+}
+
 /// The set of math operations that can be done to a Tensor. Can
 /// involve either a singular tensor serving as the left-hand-side(lhs)
 /// or two tensors serving as the left and right hand sides each (lhs, rhs)

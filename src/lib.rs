@@ -46,6 +46,7 @@ pub struct Tensor<T: Float + 'static> {
 }
 
 impl<T: Float> Tensor<T> {
+
     pub fn get_strides(&self) -> &[isize] {
         self.data.strides()
     }

@@ -1,7 +1,7 @@
 //! This module is mainly concerned with creating the computation graph of Tensor operations.
 //!
 
-use crate::{math::MathFn, Tensor, TensorErr};
+use crate::{math::{MathFn, TensorGrad}, Tensor, TensorErr};
 use num_traits::Float;
 use std::ops::AddAssign;
 
@@ -47,19 +47,14 @@ impl<T: Float + 'static> Tensor<T> {
     }
 
     /// sends the gradient of a Tensor to it's parents
-    fn send_grad(&self) {}
+    fn send_grad(&self, grad : &Tensor<T>) {
 
-    fn calculate_grad(&self) -> Tensor<T>{
-        unimplemented!()
     }
 
-    /// computes the backwards pass for Tensor gradient calculation
-    pub fn backward(&self) {
-        // TODO Improve the naive implementation using topological sort
-
+    fn calculate_grad(&self) -> TensorGrad<T>{
         // get the computed gradient as either the root (None) 
         // or from the childrens previous backwards passes (Some)
-        let grad =  match self.grad.as_ref() { 
+        let cur_grad =  match self.grad.as_ref() { 
             None => {
                 let shape = [self.shape[0], self.shape[1]];
                 Tensor::<T>::ones(shape)
@@ -69,6 +64,47 @@ impl<T: Float + 'static> Tensor<T> {
             }
         };
         unimplemented!()
+    }
+
+    /// computes the backwards pass for Tensor gradient calculation
+    pub fn backward(&self) {
+        // TODO Improve the naive implementation using topological sort
+
+
+        let mut stack = Vec::new(); 
+        let start = std::rc::Rc::new( std::cell::RefCell::new(self.clone()));
+
+        stack.push(start); 
+
+        while stack.len() > 0 { 
+            let curr_tensor = stack.pop().unwrap();
+            let cur_grad = curr_tensor.borrow().calculate_grad(); 
+
+            // TODO cleanup the use of RefCell it actually is not needed
+            match curr_tensor.clone().borrow().lhs.as_ref() { 
+                None => {}, 
+                Some(lhs) => {
+                    // send gradient which will decrease the number of dependeccies 
+                    lhs.borrow().send_grad(&cur_grad.lhs);
+
+                    if *lhs.borrow().deps.borrow() > 0 { 
+                        stack.push(lhs.clone())
+                    }
+                }
+            }
+            // TODO handle these in a function
+            match curr_tensor.clone().borrow().rhs.as_ref() { 
+                None => {},
+                Some(rhs) => {
+                    rhs.borrow().send_grad(&cur_grad.rhs.as_ref().unwrap());
+                    if *rhs.borrow().deps.borrow() > 0 { 
+                        stack.push(rhs.clone())
+                    }
+                }
+            }
+
+        }
+        unimplemented!();
     }
 }
 
