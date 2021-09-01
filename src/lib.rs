@@ -147,6 +147,18 @@ impl<T: Float> Tensor<T> {
             ..self
         }
     }
+
+    /// creates a Tensor with a given shape with every element equaling to 1
+    pub fn ones(shape: [usize; 2]) -> Self { 
+        let arr = Array2::<T>::ones(shape);
+        Tensor::new_from_arr(arr)
+    }
+
+    /// creates a Tensor with a given shape with every element equaling to 0
+    pub fn zeros(shape: [usize; 2]) -> Self { 
+        let arr = Array2::<T>::zeros(shape);
+        Tensor::new_from_arr(arr)
+    }
 }
 
 #[macro_export]
@@ -298,6 +310,22 @@ mod tests {
     use std::convert::TryFrom;
 
     use crate::{tensor, Tensor};
+
+    #[test]
+    fn ones_test() {
+        let shape = [4, 5]; 
+        let tensor = Tensor::<f64>::ones(shape); 
+        tensor.data.iter().for_each(|val| assert_eq!(*val, 1.0f64))
+    }
+
+    #[test]
+    fn zeros_test() {
+        fn ones_test() {
+            let shape = [4, 5]; 
+            let tensor = Tensor::<f64>::ones(shape); 
+            tensor.data.iter().for_each(|val| assert_eq!(*val, 0.0f64))
+        }
+    }
 
     #[test]
     fn instance_test() {

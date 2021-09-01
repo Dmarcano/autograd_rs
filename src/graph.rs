@@ -51,6 +51,11 @@ impl<T: Float + 'static> Tensor<T> {
 
     /// computes the backwards pass for Tensor gradient calculation
     pub fn backward(&self) {
+
+        let grad =  match self.grad.as_ref() { 
+            None => {},
+            Some(grads) => {}
+        };
         unimplemented!()
     }
 }
