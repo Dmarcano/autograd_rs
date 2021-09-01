@@ -49,16 +49,23 @@ impl<T: Float + 'static> Tensor<T> {
     /// sends the gradient of a Tensor to it's parents
     fn send_grad(&self) {}
 
+    fn calculate_grad(&self) -> Tensor<T>{
+        unimplemented!()
+    }
+
     /// computes the backwards pass for Tensor gradient calculation
     pub fn backward(&self) {
+        // TODO Improve the naive implementation using topological sort
 
+        // get the computed gradient as either the root (None) 
+        // or from the childrens previous backwards passes (Some)
         let grad =  match self.grad.as_ref() { 
             None => {
                 let shape = [self.shape[0], self.shape[1]];
                 Tensor::<T>::ones(shape)
             },
             Some(grads) => {
-                unimplemented!()
+                grads.as_ref().borrow().clone()
             }
         };
         unimplemented!()

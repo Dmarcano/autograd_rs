@@ -320,11 +320,11 @@ mod tests {
 
     #[test]
     fn zeros_test() {
-        fn ones_test() {
-            let shape = [4, 5]; 
-            let tensor = Tensor::<f64>::ones(shape); 
-            tensor.data.iter().for_each(|val| assert_eq!(*val, 0.0f64))
-        }
+        
+        let shape = [4, 5]; 
+        let tensor = Tensor::<f64>::zeros(shape); 
+        tensor.data.iter().for_each(|val| assert_eq!(*val, 0.0f64))
+        
     }
 
     #[test]
