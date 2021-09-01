@@ -2,7 +2,10 @@ use core::cell::RefCell;
 use errors::TensorErr;
 use ndarray::{Array, Array2, ErrorKind, Ix2, ShapeError};
 use num_traits::Float;
-use std::{convert::TryFrom, rc::Rc};
+use std::{
+    convert::{From, TryFrom},
+    rc::Rc,
+};
 
 mod errors;
 pub mod forward_mode;
@@ -79,16 +82,24 @@ impl<T: Float> Tensor<T> {
 
         let arr = Array2::from_shape_vec(vec_shape, data)?;
 
-        Ok(Tensor {
+        Ok(Tensor::new_from_arr(arr))
+    }
+
+    //
+    pub(crate) fn new_from_arr(arr: Array2<T>) -> Self {
+        let raw_shape = arr.raw_dim();
+        let shape = [raw_shape[0], raw_shape[1]];
+
+        Tensor {
             data: Rc::new(arr),
-            shape: Rc::new(vec_shape.to_vec()),
+            shape: Rc::new(shape.to_vec()),
             tracked: true,
             lhs: None,
             rhs: None,
             op: None,
             grad: None,
             deps: Rc::new(RefCell::new(0)),
-        })
+        }
     }
 
     fn with_parents(self, lhs: &Tensor<T>, rhs: Option<&Tensor<T>>) -> Self {
@@ -97,14 +108,9 @@ impl<T: Float> Tensor<T> {
             Some(tensor) => Some(Rc::new(RefCell::new(tensor.clone()))),
         };
         Tensor {
-            data: self.data,
-            shape: self.shape,
-            tracked: self.tracked,
             rhs: Some(Rc::new(RefCell::new(lhs.clone()))),
             lhs: parent,
-            grad: self.grad,
-            op: self.op,
-            deps: self.deps,
+            ..self
         }
     }
 
@@ -113,14 +119,8 @@ impl<T: Float> Tensor<T> {
     /// previously used the previous Tensor are not mutated themselves (causing a panic)
     pub fn tracked(self) -> Self {
         Tensor {
-            data: self.data,
-            shape: self.shape,
             tracked: true,
-            rhs: self.rhs,
-            lhs: self.lhs,
-            grad: self.grad,
-            op: self.op,
-            deps: self.deps,
+            ..self
         }
     }
 
@@ -129,14 +129,8 @@ impl<T: Float> Tensor<T> {
     /// previously used the previous Tensor are not mutated themselves (causing a panic)
     pub fn untracked(self) -> Self {
         Tensor {
-            data: self.data,
-            shape: self.shape,
             tracked: false,
-            rhs: self.rhs,
-            lhs: self.lhs,
-            grad: self.grad,
-            op: self.op,
-            deps: self.deps,
+            ..self
         }
     }
 
@@ -148,14 +142,9 @@ impl<T: Float> Tensor<T> {
     /// Stores a function that was used to create a Specific tensor
     pub(crate) fn with_op(self, op: math::MathFn<T>) -> Self {
         Tensor {
-            data: self.data,
-            shape: self.shape,
             tracked: false,
-            rhs: self.rhs,
-            lhs: self.lhs,
-            grad: self.grad,
             op: Some(op),
-            deps: self.deps,
+            ..self
         }
     }
 }
@@ -227,9 +216,14 @@ impl<T: Float> Clone for Tensor<T> {
     }
 }
 
+impl<T: Float> From<Array2<T>> for Tensor<T> {
+    fn from(array: Array2<T>) -> Self {
+        Tensor::new_from_arr(array)
+    }
+}
+
 impl<T: Float> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     type Error = TensorErr;
-
     /// tries to build a Tensor from a Vector of vectors. The inner vectors are treated in row order
     ///
     fn try_from(value: Vec<Vec<T>>) -> Result<Self, Self::Error> {
@@ -240,14 +234,6 @@ impl<T: Float> TryFrom<Vec<Vec<T>>> for Tensor<T> {
             .collect();
 
         Tensor::try_from(inner_tensors)
-    }
-}
-
-impl<T: Float> TryFrom<(Vec<usize>, Vec<T>)> for Tensor<T> {
-    type Error = TensorErr;
-
-    fn try_from(value: (Vec<usize>, Vec<T>)) -> Result<Self, Self::Error> {
-        todo!()
     }
 }
 

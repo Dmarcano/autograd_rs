@@ -2,7 +2,6 @@
 //!
 
 use crate::{math::MathFn, Tensor, TensorErr};
-use ndarray::Array2;
 use num_traits::Float;
 use std::ops::AddAssign;
 
@@ -32,19 +31,13 @@ impl<T: Float + 'static> Tensor<T> {
         };
 
         // 3 create a new child tensor with the current parent tensor(s) as lhs and rhs if tracking is being used
-        let child = Tensor::from_op_output(output).with_op(op);
+        let child = Tensor::new_from_arr(output).with_op(op);
 
         if tracked {
             return Ok(child.tracked().with_parents(self, other));
         } else {
             Ok(child)
         }
-    }
-
-    fn from_op_output(output: Array2<T>) -> Tensor<T> {
-        let shape = output.shape().to_vec();
-        let data = output.into_raw_vec();
-        Tensor::new(data, &shape).unwrap()
     }
 
     fn increment_deps(&self) {
