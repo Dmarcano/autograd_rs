@@ -53,8 +53,13 @@ impl<T: Float + 'static> Tensor<T> {
     pub fn backward(&self) {
 
         let grad =  match self.grad.as_ref() { 
-            None => {},
-            Some(grads) => {}
+            None => {
+                let shape = [self.shape[0], self.shape[1]];
+                Tensor::<T>::ones(shape)
+            },
+            Some(grads) => {
+                unimplemented!()
+            }
         };
         unimplemented!()
     }
