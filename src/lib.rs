@@ -46,7 +46,6 @@ pub struct Tensor<T: Float + 'static> {
 }
 
 impl<T: Float> Tensor<T> {
-
     pub fn get_strides(&self) -> &[isize] {
         self.data.strides()
     }
@@ -150,13 +149,13 @@ impl<T: Float> Tensor<T> {
     }
 
     /// creates a Tensor with a given shape with every element equaling to 1
-    pub fn ones(shape: [usize; 2]) -> Self { 
+    pub fn ones(shape: [usize; 2]) -> Self {
         let arr = Array2::<T>::ones(shape);
         Tensor::new_from_arr(arr)
     }
 
     /// creates a Tensor with a given shape with every element equaling to 0
-    pub fn zeros(shape: [usize; 2]) -> Self { 
+    pub fn zeros(shape: [usize; 2]) -> Self {
         let arr = Array2::<T>::zeros(shape);
         Tensor::new_from_arr(arr)
     }
@@ -314,18 +313,16 @@ mod tests {
 
     #[test]
     fn ones_test() {
-        let shape = [4, 5]; 
-        let tensor = Tensor::<f64>::ones(shape); 
+        let shape = [4, 5];
+        let tensor = Tensor::<f64>::ones(shape);
         tensor.data.iter().for_each(|val| assert_eq!(*val, 1.0f64))
     }
 
     #[test]
     fn zeros_test() {
-        
-        let shape = [4, 5]; 
-        let tensor = Tensor::<f64>::zeros(shape); 
+        let shape = [4, 5];
+        let tensor = Tensor::<f64>::zeros(shape);
         tensor.data.iter().for_each(|val| assert_eq!(*val, 0.0f64))
-        
     }
 
     #[test]

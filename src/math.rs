@@ -28,9 +28,9 @@ pub enum UnaryFn<T: Float + 'static> {
 
 /// A struct that holds the gradient with respect to the parents of a tensor
 #[derive(Debug, PartialEq)]
-pub(crate) struct TensorGrad<T : Float + 'static> { 
-    pub lhs : Tensor<T>, 
-    pub rhs : Option<Tensor<T>>
+pub(crate) struct TensorGrad<T: Float + 'static> {
+    pub lhs: Tensor<T>,
+    pub rhs: Option<Tensor<T>>,
 }
 
 /// The set of math operations that can be done to a Tensor. Can
@@ -44,6 +44,27 @@ pub enum MathFn<T: Float + 'static> {
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
 impl<T: 'static + Float> Tensor<T> {
+    // take the derivative of a unary operation with respect to somee parent tensor
+    pub(crate) fn d_unary_op(
+        &self,
+        op: UnaryFn<T>,
+        grad: &Tensor<T>,
+        lhs: &Tensor<T>,
+    ) -> Result<TensorGrad<T>, TensorErr> {
+        unimplemented!()
+    }
+
+    /// take the derivative of a binary function with respect to one of it's parents
+    pub(crate) fn d_binary_op(
+        &self,
+        op: BinaryFn,
+        grad: &Tensor<T>,
+        lhs: &Tensor<T>,
+        rhs: &Tensor<T>,
+    ) -> Result<TensorGrad<T>, TensorErr> {
+        unimplemented!()
+    }
+
     pub(crate) fn unary_op(&self, op: UnaryFn<T>) -> Result<Array2<T>, TensorErr> {
         let output = match op {
             UnaryFn::Sin => self.data.map(|val| val.sin()),

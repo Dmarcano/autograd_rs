@@ -1,7 +1,10 @@
 //! This module is mainly concerned with creating the computation graph of Tensor operations.
 //!
 
-use crate::{math::{MathFn, TensorGrad}, Tensor, TensorErr};
+use crate::{
+    math::{MathFn, TensorGrad},
+    Tensor, TensorErr,
+};
 use num_traits::Float;
 use std::ops::AddAssign;
 
@@ -47,64 +50,84 @@ impl<T: Float + 'static> Tensor<T> {
     }
 
     /// sends the gradient of a Tensor to it's parents
-    fn send_grad(&self, grad : &Tensor<T>) {
+    fn send_grad(&self, grad: &Tensor<T>) {}
 
-    }
-
-    fn calculate_grad(&self) -> TensorGrad<T>{
-        // get the computed gradient as either the root (None) 
+    fn calculate_grad(&self) -> Result<TensorGrad<T>, TensorErr> {
+        // get the computed gradient as either the root (None)
         // or from the childrens previous backwards passes (Some)
-        let cur_grad =  match self.grad.as_ref() { 
+        let cur_grad = match self.grad.as_ref() {
             None => {
                 let shape = [self.shape[0], self.shape[1]];
                 Tensor::<T>::ones(shape)
-            },
-            Some(grads) => {
-                grads.as_ref().borrow().clone()
+            }
+            Some(grads) => grads.as_ref().borrow().clone(),
+        };
+
+        // 2. calculate the gradient to be given to LHS and RHS parents using the
+        // TODO: note to call backwards requires the use of calculating a computation graph
+        // TODO add an error for calling backward on non computed computational graph
+        let op = self.op.as_ref().unwrap().clone();
+
+        let output = match op {
+            MathFn::TensorFns(func) => self.d_binary_op(
+                func,
+                &cur_grad,
+                &*self.lhs.as_ref().unwrap().borrow(),
+                &*self.rhs.as_ref().unwrap().borrow(),
+            ),
+            MathFn::UnaryFn(func) => {
+                self.d_unary_op(func, &cur_grad, &*self.lhs.as_ref().unwrap().borrow())
             }
         };
+        output
+    }
+
+    /// returns if the self node is a leaf node of a computational graph and thus should not
+    /// need to send it's gradients in the backwards call
+    fn is_leaf_node(&self) -> bool {
         unimplemented!()
     }
 
     /// computes the backwards pass for Tensor gradient calculation
-    pub fn backward(&self) {
+    pub fn backward(&self) -> Result<(), TensorErr> {
         // TODO Improve the naive implementation using topological sort
 
+        let mut stack = Vec::new();
+        let start = std::rc::Rc::new(std::cell::RefCell::new(self.clone()));
 
-        let mut stack = Vec::new(); 
-        let start = std::rc::Rc::new( std::cell::RefCell::new(self.clone()));
+        stack.push(start);
 
-        stack.push(start); 
-
-        while stack.len() > 0 { 
+        while stack.len() > 0 {
             let curr_tensor = stack.pop().unwrap();
-            let cur_grad = curr_tensor.borrow().calculate_grad(); 
+            // only calculate grad if there are no dependecies and it's possible
+            // to calculate grad
+            let cur_grad = curr_tensor.borrow().calculate_grad()?;
 
             // TODO cleanup the use of RefCell it actually is not needed
-            match curr_tensor.clone().borrow().lhs.as_ref() { 
-                None => {}, 
+            match curr_tensor.clone().borrow().lhs.as_ref() {
+                None => {
+                    // TODO add error for non-leaf nodes that are not differentiable
+                }
                 Some(lhs) => {
-                    // send gradient which will decrease the number of dependeccies 
+                    // send gradient which will decrease the number of dependeccies
                     lhs.borrow().send_grad(&cur_grad.lhs);
 
-                    if *lhs.borrow().deps.borrow() > 0 { 
+                    if *lhs.borrow().deps.borrow() == 0 && !lhs.borrow().is_leaf_node() {
                         stack.push(lhs.clone())
                     }
                 }
             }
-            // TODO handle these in a function
-            match curr_tensor.clone().borrow().rhs.as_ref() { 
-                None => {},
+            match curr_tensor.clone().borrow().rhs.as_ref() {
+                None => {}
                 Some(rhs) => {
                     rhs.borrow().send_grad(&cur_grad.rhs.as_ref().unwrap());
-                    if *rhs.borrow().deps.borrow() > 0 { 
+                    if *rhs.borrow().deps.borrow() == 0 && !rhs.borrow().is_leaf_node() {
                         stack.push(rhs.clone())
                     }
                 }
             }
-
         }
-        unimplemented!();
+        Ok(())
     }
 }
 
