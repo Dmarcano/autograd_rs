@@ -2,7 +2,7 @@
 
 use crate::{errors::TensorErr, Tensor};
 use ndarray::Array2;
-use num_traits::Float;
+use num_traits::{cast::FromPrimitive, Float};
 use std::ops::{Add, Deref, Div, Mul, Sub};
 
 /// A set of possible functions between two tensors.
@@ -43,32 +43,33 @@ pub enum MathFn<T: Float + 'static> {
 }
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
-impl<T: 'static + Float> Tensor<T> {
+impl<T: 'static + Float + std::fmt::Debug> Tensor<T> {
     // take the derivative of a unary operation with respect to somee parent tensor
     pub(crate) fn d_unary_op(
         &self,
         op: UnaryFn<T>,
         lhs: &Tensor<T>,
     ) -> Result<TensorGrad<T>, TensorErr> {
-
         let cur_grad = self.grad.as_ref().borrow();
-        // Note unary functions will retain the shape of the tensor so no 
-        // special edge cases are necessary when dealing with the shape of the grad 
+        // Note unary functions will retain the shape of the tensor so no
+        // special edge cases are necessary when dealing with the shape of the grad
         // relative to it's parent
         let output = match op {
             UnaryFn::Sin => lhs.data.map(|val| val.cos()) * (&*cur_grad),
             UnaryFn::Cos => lhs.data.map(|val| -(val.sin())) * (&*cur_grad),
-            UnaryFn::Exp => unimplemented!(),
-            UnaryFn::Ln => unimplemented!(),
-            UnaryFn::Log(base) => unimplemented!(),
-            UnaryFn::PowF(base) => unimplemented!(),
+            UnaryFn::Exp => lhs.data.map(|val| val.exp()) * (&*cur_grad),
+            UnaryFn::Ln => lhs.data.map(|val| val.recip()) * (&*cur_grad),
+            UnaryFn::Log(base) => {
+                lhs.data.map(|val| val.recip() * (base.ln()).recip()) * (&*cur_grad)
+            }
+            UnaryFn::PowF(_power) => unimplemented!(), //lhs.data.map(|val| power * val.powf(power - 1.0.into())), // TODO implement power rule,
         };
 
-        let result = TensorGrad { 
-            lhs : Tensor::new_from_arr(output), 
-            rhs : None
+        let result = TensorGrad {
+            lhs: Tensor::new_from_arr(output),
+            rhs: None,
         };
-        
+
         Ok(result)
     }
 
@@ -80,7 +81,22 @@ impl<T: 'static + Float> Tensor<T> {
         lhs: &Tensor<T>,
         rhs: &Tensor<T>,
     ) -> Result<TensorGrad<T>, TensorErr> {
-        unimplemented!()
+
+        let output = match op {
+            BinaryFn::Add => (grad.clone(), grad.clone()),
+            BinaryFn::Sub => unimplemented!(),
+            // multiplication was done by two Tensors that are capable of being broadcasted
+            BinaryFn::Mul => (rhs.data.deref() * grad, lhs.data.deref() * grad),
+            BinaryFn::Div => unimplemented!(),
+            BinaryFn::MatMul => unimplemented!(),
+        };
+
+        let out_grad = TensorGrad { 
+            lhs : Tensor::new_from_arr(output.0), 
+            rhs : Some(Tensor::new_from_arr(output.1))
+        };
+
+        Ok(out_grad)
     }
 
     pub(crate) fn unary_op(&self, op: UnaryFn<T>) -> Result<Array2<T>, TensorErr> {
@@ -90,7 +106,7 @@ impl<T: 'static + Float> Tensor<T> {
             UnaryFn::Exp => self.data.map(|val| val.exp()),
             UnaryFn::Ln => self.data.map(|val| val.ln()),
             UnaryFn::Log(base) => self.data.map(|val| val.log(base)),
-            UnaryFn::PowF(base) => self.data.map(|val| val.powf(base)),
+            UnaryFn::PowF(power) => self.data.map(|val| val.powf(power)),
         };
 
         Ok(output)
@@ -125,15 +141,17 @@ impl<T: 'static + Float> Tensor<T> {
             .unwrap()
     }
 
-    /// takes every element in a Tensor and raises by e
+    /// takes every element in a Tensor and creates a new tensor with every element equal to
+    ///  e^(element)
     pub fn exp(&self) -> Tensor<T> {
         self.operation(None, MathFn::UnaryFn(UnaryFn::Exp::<T>))
             .unwrap()
     }
 
-    /// Raises every element in a tensor and raises it by a Floating point number
-    pub fn powf(&self, base: T) -> Tensor<T> {
-        self.operation(None, MathFn::UnaryFn(UnaryFn::PowF(base)))
+    /// takes every element in a Tensor and creates a new tensor with every element equal to
+    ///  element^(power)
+    pub fn powf(&self, power: T) -> Tensor<T> {
+        self.operation(None, MathFn::UnaryFn(UnaryFn::PowF(power)))
             .unwrap()
     }
 
@@ -156,7 +174,7 @@ impl<T: 'static + Float> Tensor<T> {
 
 // ======================= Borrowed Implementations
 
-impl<T: Float + 'static> Add for &Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Add for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -165,7 +183,7 @@ impl<T: Float + 'static> Add for &Tensor<T> {
     }
 }
 
-impl<T: Float + 'static> Sub for &Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Sub for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -174,7 +192,7 @@ impl<T: Float + 'static> Sub for &Tensor<T> {
     }
 }
 
-impl<T: Float + 'static> Mul for &Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Mul for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -183,7 +201,7 @@ impl<T: Float + 'static> Mul for &Tensor<T> {
     }
 }
 
-impl<T: Float + 'static> Div for &Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Div for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -194,7 +212,7 @@ impl<T: Float + 'static> Div for &Tensor<T> {
 
 // ======================== Owned Implementations
 
-impl<T: Float + 'static> Add for Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Add for Tensor<T> {
     type Output = Tensor<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -203,7 +221,7 @@ impl<T: Float + 'static> Add for Tensor<T> {
     }
 }
 
-impl<T: Float + 'static> Sub for Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Sub for Tensor<T> {
     type Output = Tensor<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -212,7 +230,7 @@ impl<T: Float + 'static> Sub for Tensor<T> {
     }
 }
 
-impl<T: Float + 'static> Mul for Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Mul for Tensor<T> {
     type Output = Tensor<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -221,7 +239,7 @@ impl<T: Float + 'static> Mul for Tensor<T> {
     }
 }
 
-impl<T: Float + 'static> Div for Tensor<T> {
+impl<T: Float + std::fmt::Debug + 'static> Div for Tensor<T> {
     type Output = Tensor<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -462,19 +480,113 @@ mod tests {
 
     #[test]
     fn d_sin_test() {
-        // taking the derivative of y = sin(x) where 
+        // taking the derivative of y = sin(x) where
         // x = 2.0
-        // the derivative of y is 3.0 
+        // the adjoint of y is wrt some output variable is 3.0
         let mut tensor = tensor!(1.0).tracked();
-        let grad = Array2::<f64>::from_elem([1, 1], 3.0); 
-        tensor.grad = std::rc::Rc::new(std::cell::RefCell::new(grad)) ;
+        let grad = Array2::<f64>::from_elem([1, 1], 3.0);
+        tensor.grad = std::rc::Rc::new(std::cell::RefCell::new(grad));
 
-        let lhs_parent = tensor!(2.0); 
-        let op = UnaryFn::Sin; 
+        let lhs_parent = tensor!(2.0);
+        let op = UnaryFn::Sin;
 
         let output = tensor.d_unary_op(op, &lhs_parent).unwrap();
 
+        // we expect the derivative to be the cos(x)*bar{y}
+        let expected = 2.0.cos() * 3.0;
 
+        let abs_diff = (output.lhs.data[[0, 0]] - expected).abs();
+        assert!(abs_diff < 1e-10);
+    }
+
+    #[test]
+    fn d_cos_test() {
+        // taking the derivative of y = cos(x) where
+        // x = 2.0
+        // the adjoint of y is wrt some output variable is 3.0
+        let mut tensor = tensor!(1.0).tracked();
+        let grad = Array2::<f64>::from_elem([1, 1], 3.0);
+        tensor.grad = std::rc::Rc::new(std::cell::RefCell::new(grad));
+
+        let lhs_parent = tensor!(2.0);
+        let op = UnaryFn::Cos;
+
+        let output = tensor.d_unary_op(op, &lhs_parent).unwrap();
+
+        // we expect the derivative to be the -sin(x)*bar{y}
+        let expected = (-(2.0.sin())) * 3.0;
+
+        let abs_diff = (output.lhs.data[[0, 0]] - expected).abs();
+        assert!(abs_diff < 1e-10);
+    }
+
+    #[test]
+    fn d_exp_test() {
+        // taking the derivative of y = exp(x) where
+        // x = 2.0
+        // the adjoint of y is wrt some output variable is 3.0
+        let mut tensor = tensor!(1.0).tracked();
+        let grad = Array2::<f64>::from_elem([1, 1], 3.0);
+        tensor.grad = std::rc::Rc::new(std::cell::RefCell::new(grad));
+
+        let lhs_parent = tensor!(2.0);
+        let op = UnaryFn::Exp;
+
+        let output = tensor.d_unary_op(op, &lhs_parent).unwrap();
+
+        // we expect the derivative to be the -sin(x)*bar{y}
+        let expected = (2.0.exp()) * 3.0;
+
+        let abs_diff = (output.lhs.data[[0, 0]] - expected).abs();
+        assert!(abs_diff < 1e-10);
+    }
+
+    #[test]
+    fn d_powf_test() {
         unimplemented!();
+    }
+
+    #[test]
+    fn d_ln_test() {
+        // taking the derivative of y = ln(x) where
+        // x = 2.0
+        // the adjoint of y is wrt some output variable is 3.0
+        let mut tensor = tensor!(1.0).tracked();
+        let grad = Array2::<f64>::from_elem([1, 1], 3.0);
+        tensor.grad = std::rc::Rc::new(std::cell::RefCell::new(grad));
+
+        let lhs_parent = tensor!(2.0);
+        let op = UnaryFn::Ln;
+
+        let output = tensor.d_unary_op(op, &lhs_parent).unwrap();
+
+        // we expect the derivative to be the -sin(x)*bar{y}
+        let expected = (2.0.recip()) * 3.0;
+
+        let abs_diff = (output.lhs.data[[0, 0]] - expected).abs();
+        assert!(abs_diff < 1e-10);
+
+    }
+
+    #[test]
+    fn d_log_test() {
+        // taking the derivative of y = log(x, a) where
+        // x = 2.0
+        // the adjoint of y is wrt some output variable is 3.0
+        let mut tensor = tensor!(1.0).tracked();
+        let grad = Array2::<f64>::from_elem([1, 1], 3.0);
+        tensor.grad = std::rc::Rc::new(std::cell::RefCell::new(grad));
+
+        let lhs_parent = tensor!(2.0);
+        let op = UnaryFn::Log(5.0);
+
+        let output = tensor.d_unary_op(op, &lhs_parent).unwrap();
+
+        // we expect the derivative to be the -sin(x)*bar{y}
+        let expected = (2.0.recip()) * 3.0;
+
+        let abs_diff = (output.lhs.data[[0, 0]] - expected).abs();
+        assert!(abs_diff < 1e-10);
+
     }
 }
