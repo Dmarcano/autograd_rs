@@ -50,9 +50,11 @@ impl<T: Float + 'static> Tensor<T> {
         };
     }
 
+    /// TODO: Test
     /// sends the gradient of a Tensor to it's parents
     fn send_grad(&self, grad: &Tensor<T>) {}
 
+    /// TODO Test
     fn calculate_grad(&self) -> Result<TensorGrad<T>, TensorErr> {
         // get the computed gradient as either the root (None)
         // or from the childrens previous backwards passes (Some)
@@ -71,7 +73,7 @@ impl<T: Float + 'static> Tensor<T> {
                 &*self.rhs.as_ref().unwrap().borrow(),
             ),
             MathFn::UnaryFn(func) => {
-                self.d_unary_op(func, &cur_grad, &*self.lhs.as_ref().unwrap().borrow())
+                self.d_unary_op(func, &*self.lhs.as_ref().unwrap().borrow())
             }
         };
         output
@@ -88,9 +90,9 @@ impl<T: Float + 'static> Tensor<T> {
         // TODO Improve the naive implementation using topological sort
 
         let mut stack = Vec::new();
+        // initialize the gradient of the output of the function
         let mut start = self.clone();
         let start_grad = Array2::ones([start.shape[0], start.shape[1]]);
-
         start.grad = std::rc::Rc::new(std::cell::RefCell::new(start_grad));
         stack.push(std::rc::Rc::new(std::cell::RefCell::new(start)));
 

@@ -48,10 +48,28 @@ impl<T: 'static + Float> Tensor<T> {
     pub(crate) fn d_unary_op(
         &self,
         op: UnaryFn<T>,
-        grad: &Array2<T>,
         lhs: &Tensor<T>,
     ) -> Result<TensorGrad<T>, TensorErr> {
-        unimplemented!()
+
+        let cur_grad = self.grad.as_ref().borrow();
+        // Note unary functions will retain the shape of the tensor so no 
+        // special edge cases are necessary when dealing with the shape of the grad 
+        // relative to it's parent
+        let output = match op {
+            UnaryFn::Sin => lhs.data.map(|val| val.cos()) * (&*cur_grad),
+            UnaryFn::Cos => lhs.data.map(|val| -(val.sin())) * (&*cur_grad),
+            UnaryFn::Exp => unimplemented!(),
+            UnaryFn::Ln => unimplemented!(),
+            UnaryFn::Log(base) => unimplemented!(),
+            UnaryFn::PowF(base) => unimplemented!(),
+        };
+
+        let result = TensorGrad { 
+            lhs : Tensor::new_from_arr(output), 
+            rhs : None
+        };
+        
+        Ok(result)
     }
 
     /// take the derivative of a binary function with respect to one of it's parents
@@ -440,5 +458,23 @@ mod tests {
                 let abs_diff = (lhs - rhs).abs();
                 assert!(abs_diff < 1e-10)
             });
+    }
+
+    #[test]
+    fn d_sin_test() {
+        // taking the derivative of y = sin(x) where 
+        // x = 2.0
+        // the derivative of y is 3.0 
+        let mut tensor = tensor!(1.0).tracked();
+        let grad = Array2::<f64>::from_elem([1, 1], 3.0); 
+        tensor.grad = std::rc::Rc::new(std::cell::RefCell::new(grad)) ;
+
+        let lhs_parent = tensor!(2.0); 
+        let op = UnaryFn::Sin; 
+
+        let output = tensor.d_unary_op(op, &lhs_parent).unwrap();
+
+
+        unimplemented!();
     }
 }
