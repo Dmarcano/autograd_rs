@@ -48,7 +48,7 @@ impl<T: 'static + Float> Tensor<T> {
     pub(crate) fn d_unary_op(
         &self,
         op: UnaryFn<T>,
-        grad: &Tensor<T>,
+        grad: &Array2<T>,
         lhs: &Tensor<T>,
     ) -> Result<TensorGrad<T>, TensorErr> {
         unimplemented!()
@@ -58,7 +58,7 @@ impl<T: 'static + Float> Tensor<T> {
     pub(crate) fn d_binary_op(
         &self,
         op: BinaryFn,
-        grad: &Tensor<T>,
+        grad: &Array2<T>,
         lhs: &Tensor<T>,
         rhs: &Tensor<T>,
     ) -> Result<TensorGrad<T>, TensorErr> {

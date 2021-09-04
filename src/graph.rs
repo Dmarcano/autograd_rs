@@ -5,6 +5,7 @@ use crate::{
     math::{MathFn, TensorGrad},
     Tensor, TensorErr,
 };
+use ndarray::Array2;
 use num_traits::Float;
 use std::ops::AddAssign;
 
@@ -55,13 +56,7 @@ impl<T: Float + 'static> Tensor<T> {
     fn calculate_grad(&self) -> Result<TensorGrad<T>, TensorErr> {
         // get the computed gradient as either the root (None)
         // or from the childrens previous backwards passes (Some)
-        let cur_grad = match self.grad.as_ref() {
-            None => {
-                let shape = [self.shape[0], self.shape[1]];
-                Tensor::<T>::ones(shape)
-            }
-            Some(grads) => grads.as_ref().borrow().clone(),
-        };
+        let cur_grad = self.grad.as_ref().borrow();
 
         // 2. calculate the gradient to be given to LHS and RHS parents using the
         // TODO: note to call backwards requires the use of calculating a computation graph
@@ -93,15 +88,17 @@ impl<T: Float + 'static> Tensor<T> {
         // TODO Improve the naive implementation using topological sort
 
         let mut stack = Vec::new();
-        let start = std::rc::Rc::new(std::cell::RefCell::new(self.clone()));
+        let mut start = self.clone();
+        let start_grad = Array2::ones([start.shape[0], start.shape[1]]);
 
-        stack.push(start);
+        start.grad = std::rc::Rc::new(std::cell::RefCell::new(start_grad));
+        stack.push(std::rc::Rc::new(std::cell::RefCell::new(start)));
 
         while stack.len() > 0 {
             let curr_tensor = stack.pop().unwrap();
             // only calculate grad if there are no dependecies and it's possible
             // to calculate grad
-            let cur_grad = curr_tensor.borrow().calculate_grad()?;
+            let cur_grad = curr_tensor.borrow_mut().calculate_grad()?;
 
             // TODO cleanup the use of RefCell it actually is not needed
             match curr_tensor.clone().borrow().lhs.as_ref() {
@@ -112,7 +109,7 @@ impl<T: Float + 'static> Tensor<T> {
                     // send gradient which will decrease the number of dependeccies
                     lhs.borrow().send_grad(&cur_grad.lhs);
 
-                    if *lhs.borrow().deps.borrow() == 0 && !lhs.borrow().is_leaf_node() {
+                    if *lhs.borrow().deps.borrow() == 0 {
                         stack.push(lhs.clone())
                     }
                 }
@@ -121,7 +118,7 @@ impl<T: Float + 'static> Tensor<T> {
                 None => {}
                 Some(rhs) => {
                     rhs.borrow().send_grad(&cur_grad.rhs.as_ref().unwrap());
-                    if *rhs.borrow().deps.borrow() == 0 && !rhs.borrow().is_leaf_node() {
+                    if *rhs.borrow().deps.borrow() == 0 {
                         stack.push(rhs.clone())
                     }
                 }
@@ -241,10 +238,10 @@ mod tests {
 
         output.backward();
 
-        let x1_grad = x1.grad.as_ref().unwrap().deref().borrow().clone();
-        let x2_grad = x2.grad.as_ref().unwrap().deref().borrow().clone();
+        let x1_grad = x1.grad.as_ref().deref().borrow().clone();
+        let x2_grad = x2.grad.as_ref().deref().borrow().clone();
 
-        assert_eq!(x2_grad.data[[0, 0]], -13.7239);
-        assert_eq!(x1_grad.data[[0, 0]], 3.0118);
+        assert_eq!(x2_grad[[0, 0]], -13.7239);
+        assert_eq!(x1_grad[[0, 0]], 3.0118);
     }
 }

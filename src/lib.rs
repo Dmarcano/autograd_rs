@@ -36,7 +36,7 @@ pub struct Tensor<T: Float + 'static> {
     rhs: Option<Rc<RefCell<Tensor<T>>>>,
     op: Option<math::MathFn<T>>,
     // keeps track of gradients as they are passed in to the current tensor
-    grad: Option<Rc<RefCell<Tensor<T>>>>,
+    grad: Rc<RefCell<Array2<T>>>,
     // keeps track of the number of dependencies/gradients that need to be sent to
     // the current tensor before it gets to send it to it's own parent tensors.
     // the definition of a Tensors full gradient or adjoint is the sum of all the gradient's
@@ -97,7 +97,7 @@ impl<T: Float> Tensor<T> {
             lhs: None,
             rhs: None,
             op: None,
-            grad: None,
+            grad: Rc::new(RefCell::new(Array2::zeros(shape))),
             deps: Rc::new(RefCell::new(0)),
         }
     }
