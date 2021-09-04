@@ -9,7 +9,7 @@ use ndarray::Array2;
 use num_traits::Float;
 use std::ops::AddAssign;
 
-impl<T: Float + 'static> Tensor<T> {
+impl<T: Float + 'static + std::fmt::Debug> Tensor<T> {
     /// the general-operation function performs the necessary book-keeping before and after an operation to be used for a backwards pass.
     /// generally this involves using the given operation to save as the operation that will create the next subsequent tensor and
     /// also providing references to the parent tensors
@@ -72,9 +72,7 @@ impl<T: Float + 'static> Tensor<T> {
                 &*self.lhs.as_ref().unwrap().borrow(),
                 &*self.rhs.as_ref().unwrap().borrow(),
             ),
-            MathFn::UnaryFn(func) => {
-                self.d_unary_op(func, &*self.lhs.as_ref().unwrap().borrow())
-            }
+            MathFn::UnaryFn(func) => self.d_unary_op(func, &*self.lhs.as_ref().unwrap().borrow()),
         };
         output
     }
