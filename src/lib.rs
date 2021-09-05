@@ -1,7 +1,7 @@
 use core::cell::RefCell;
 use errors::TensorErr;
-use ndarray::{Array, Array2, ErrorKind, Ix2, ShapeError};
-use num_traits::Float;
+use ndarray::{Array, Array2, ErrorKind, Ix2, ShapeError, ScalarOperand};
+use num_traits::{cast::FromPrimitive, Float};
 use std::{
     convert::{From, TryFrom},
     rc::Rc,
@@ -15,7 +15,7 @@ mod math;
 /// A Tensor is the most basic data type in the automatic differentiation engine. Performs many basic mathematic functions and keeps track
 /// of the underlying computation graph.
 #[derive(Debug, PartialEq)]
-pub struct Tensor<T: Float + 'static> {
+pub struct Tensor<T: Float + FromPrimitive + ScalarOperand + 'static> {
     /// ND array backing the Tensor Data.
     ///
     /// ### Note on RC
@@ -36,7 +36,7 @@ pub struct Tensor<T: Float + 'static> {
     rhs: Option<Rc<RefCell<Tensor<T>>>>,
     op: Option<math::MathFn<T>>,
     // keeps track of gradients as they are passed in to the current tensor
-    grad: Rc<RefCell<Array2<T>>>,
+    pub(crate) grad: Rc<RefCell<Array2<T>>>,
     // keeps track of the number of dependencies/gradients that need to be sent to
     // the current tensor before it gets to send it to it's own parent tensors.
     // the definition of a Tensors full gradient or adjoint is the sum of all the gradient's
@@ -45,7 +45,7 @@ pub struct Tensor<T: Float + 'static> {
     deps: Rc<RefCell<usize>>,
 }
 
-impl<T: Float> Tensor<T> {
+impl<T:  Float + FromPrimitive + ScalarOperand + 'static> Tensor<T> {
     pub fn get_strides(&self) -> &[isize] {
         self.data.strides()
     }
@@ -108,8 +108,8 @@ impl<T: Float> Tensor<T> {
             Some(tensor) => Some(Rc::new(RefCell::new(tensor.clone()))),
         };
         Tensor {
-            rhs: Some(Rc::new(RefCell::new(lhs.clone()))),
-            lhs: parent,
+            lhs: Some(Rc::new(RefCell::new(lhs.clone()))),
+            rhs: parent,
             ..self
         }
     }
@@ -213,7 +213,7 @@ macro_rules! tensor {
     };
 }
 
-impl<T: Float> Clone for Tensor<T> {
+impl<T:  Float + FromPrimitive + ScalarOperand + 'static> Clone for Tensor<T> {
     fn clone(&self) -> Self {
         Tensor {
             data: self.data.clone(),
@@ -228,13 +228,13 @@ impl<T: Float> Clone for Tensor<T> {
     }
 }
 
-impl<T: Float> From<Array2<T>> for Tensor<T> {
+impl<T:  Float + FromPrimitive + ScalarOperand + 'static> From<Array2<T>> for Tensor<T> {
     fn from(array: Array2<T>) -> Self {
         Tensor::new_from_arr(array)
     }
 }
 
-impl<T: Float> TryFrom<Vec<Vec<T>>> for Tensor<T> {
+impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     type Error = TensorErr;
     /// tries to build a Tensor from a Vector of vectors. The inner vectors are treated in row order
     ///
@@ -249,7 +249,7 @@ impl<T: Float> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     }
 }
 
-impl<T: Float> TryFrom<Vec<T>> for Tensor<T> {
+impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<T>> for Tensor<T> {
     type Error = TensorErr;
 
     /// create a tensor from a vector in row-first order. That is a vector of length **N** will create a tensor of
@@ -268,7 +268,7 @@ impl<T: Float> TryFrom<Vec<T>> for Tensor<T> {
     }
 }
 
-impl<T: Float> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
+impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
     type Error = TensorErr;
 
     /// condenses a vector of tensors into one tensor where each row in the tensor corresponds to each

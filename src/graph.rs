@@ -5,11 +5,11 @@ use crate::{
     math::{MathFn, TensorGrad},
     Tensor, TensorErr,
 };
-use ndarray::Array2;
-use num_traits::Float;
-use std::ops::AddAssign;
+use ndarray::{Array2, ScalarOperand};
+use num_traits::{Float, cast::FromPrimitive};
+use std::ops::{AddAssign, Deref};
 
-impl<T: Float + 'static + std::fmt::Debug> Tensor<T> {
+impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tensor<T> {
     /// the general-operation function performs the necessary book-keeping before and after an operation to be used for a backwards pass.
     /// generally this involves using the given operation to save as the operation that will create the next subsequent tensor and
     /// also providing references to the parent tensors
@@ -50,9 +50,12 @@ impl<T: Float + 'static + std::fmt::Debug> Tensor<T> {
         };
     }
 
-    /// TODO: Test
     /// sends the gradient of a Tensor to it's parents
-    fn send_grad(&self, grad: &Tensor<T>) {}
+    /// where self is the parent tensor to be sent to
+    fn send_grad(&self, grad: &Tensor<T>) {
+        let mut curr_grad = self.grad.borrow_mut();
+        *curr_grad = &*curr_grad + grad.data.deref(); 
+    }
 
     /// TODO Test
     fn calculate_grad(&self) -> Result<TensorGrad<T>, TensorErr> {
@@ -80,7 +83,10 @@ impl<T: Float + 'static + std::fmt::Debug> Tensor<T> {
     /// returns if the self node is a leaf node of a computational graph and thus should not
     /// need to send it's gradients in the backwards call
     fn is_leaf_node(&self) -> bool {
-        unimplemented!()
+        if self.lhs == None && self.rhs == None && self.op == None {
+            return true
+        }
+        false
     }
 
     /// computes the backwards pass for Tensor gradient calculation
@@ -109,7 +115,7 @@ impl<T: Float + 'static + std::fmt::Debug> Tensor<T> {
                     // send gradient which will decrease the number of dependeccies
                     lhs.borrow().send_grad(&cur_grad.lhs);
 
-                    if *lhs.borrow().deps.borrow() == 0 {
+                    if *lhs.borrow().deps.borrow() == 0 && !lhs.borrow().is_leaf_node(){
                         stack.push(lhs.clone())
                     }
                 }
@@ -118,7 +124,7 @@ impl<T: Float + 'static + std::fmt::Debug> Tensor<T> {
                 None => {}
                 Some(rhs) => {
                     rhs.borrow().send_grad(&cur_grad.rhs.as_ref().unwrap());
-                    if *rhs.borrow().deps.borrow() == 0 {
+                    if *rhs.borrow().deps.borrow() == 0 && !rhs.borrow().is_leaf_node(){
                         stack.push(rhs.clone())
                     }
                 }
@@ -205,14 +211,14 @@ mod tests {
         );
 
         // make sure that the parents are what is expected
-        assert_eq!(*output1.lhs.as_ref().unwrap().deref().borrow(), tensor2);
-        assert_eq!(*output1.rhs.as_ref().unwrap().deref().borrow(), tensor1);
+        assert_eq!(*output1.lhs.as_ref().unwrap().deref().borrow(), tensor1);
+        assert_eq!(*output1.rhs.as_ref().unwrap().deref().borrow(), tensor2);
 
         assert_eq!(*output2.lhs.as_ref().unwrap().deref().borrow(), tensor2);
         assert_eq!(*output2.rhs.as_ref().unwrap().deref().borrow(), tensor2);
 
-        assert_eq!(*output3.lhs.as_ref().unwrap().deref().borrow(), output2);
-        assert_eq!(*output3.rhs.as_ref().unwrap().deref().borrow(), output1);
+        assert_eq!(*output3.lhs.as_ref().unwrap().deref().borrow(), output1);
+        assert_eq!(*output3.rhs.as_ref().unwrap().deref().borrow(), output2);
 
         // make sure that # dependecies are correct
         assert_eq!(*output3.deps.borrow(), 0);
@@ -227,6 +233,26 @@ mod tests {
     }
 
     #[test]
+    fn send_grad_test() {
+        let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        let grad = tensor!(tensor!(4.0, 5.0, 6.0), tensor!(1.0, 2.0, 3.0));
+
+        tensor.send_grad(&grad); 
+
+        assert_eq!(tensor.grad.borrow()[[0,0]], 4.0);
+        assert_eq!(tensor.grad.borrow()[[0,1]], 5.0);
+        assert_eq!(tensor.grad.borrow()[[0,2]], 6.0);
+        assert_eq!(tensor.grad.borrow()[[1,0]], 1.0);
+        assert_eq!(tensor.grad.borrow()[[1,1]], 2.0);
+        assert_eq!(tensor.grad.borrow()[[1,2]], 3.0);
+    }
+
+    // #[test]
+    fn calculate_grad_test() {
+        unimplemented!();
+    }
+
+    #[test]
     fn graph_creation_test() {}
 
     #[test]
@@ -234,10 +260,12 @@ mod tests {
         let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
         let output = tensor.sin().cos().exp();
 
-        unimplemented!();
+        output.backward().unwrap();
+
+        // unimplemented!();
     }
 
-    #[test]
+    // #[test]
     fn backward_test() {
         // example taken from example in https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf
         let x1 = tensor!(1.5);
