@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 use errors::TensorErr;
-use ndarray::{Array, Array2, ErrorKind, Ix2, ShapeError, ScalarOperand};
+use ndarray::{Array, Array2, ErrorKind, Ix2, ScalarOperand, ShapeError};
 use num_traits::{cast::FromPrimitive, Float};
 use std::{
     convert::{From, TryFrom},
@@ -32,8 +32,8 @@ pub struct Tensor<T: Float + FromPrimitive + ScalarOperand + 'static> {
     // in a computation graph. A reference counted pointer keeps an owned reference to tensors
     // that were used to create other tensors such that a computational graph does not need to be
     // solely defined in one scope (due to rusts lifetime rules and generally to prevent dangling pointers)
-    lhs: Option<Rc<RefCell<Tensor<T>>>>,
-    rhs: Option<Rc<RefCell<Tensor<T>>>>,
+    lhs: Option<Box<Tensor<T>>>,
+    rhs: Option<Box<Tensor<T>>>,
     op: Option<math::MathFn<T>>,
     // keeps track of gradients as they are passed in to the current tensor
     pub(crate) grad: Rc<RefCell<Array2<T>>>,
@@ -45,7 +45,7 @@ pub struct Tensor<T: Float + FromPrimitive + ScalarOperand + 'static> {
     deps: Rc<RefCell<usize>>,
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static> Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static> Tensor<T> {
     pub fn get_strides(&self) -> &[isize] {
         self.data.strides()
     }
@@ -93,7 +93,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static> Tensor<T> {
         Tensor {
             data: Rc::new(arr),
             shape: Rc::new(shape.to_vec()),
-            tracked: true,
+            tracked: false,
             lhs: None,
             rhs: None,
             op: None,
@@ -105,10 +105,10 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static> Tensor<T> {
     fn with_parents(self, lhs: &Tensor<T>, rhs: Option<&Tensor<T>>) -> Self {
         let parent = match rhs {
             None => None,
-            Some(tensor) => Some(Rc::new(RefCell::new(tensor.clone()))),
+            Some(tensor) => Some(Box::new(tensor.clone())),
         };
         Tensor {
-            lhs: Some(Rc::new(RefCell::new(lhs.clone()))),
+            lhs: Some(Box::new(lhs.clone())),
             rhs: parent,
             ..self
         }
@@ -213,7 +213,7 @@ macro_rules! tensor {
     };
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static> Clone for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static> Clone for Tensor<T> {
     fn clone(&self) -> Self {
         Tensor {
             data: self.data.clone(),
@@ -228,13 +228,13 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static> Clone for Tensor<T> {
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static> From<Array2<T>> for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static> From<Array2<T>> for Tensor<T> {
     fn from(array: Array2<T>) -> Self {
         Tensor::new_from_arr(array)
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Vec<T>>> for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     type Error = TensorErr;
     /// tries to build a Tensor from a Vector of vectors. The inner vectors are treated in row order
     ///
@@ -249,7 +249,59 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Vec<T>>> f
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<T>> for Tensor<T> {
+
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> std::fmt::Display for Tensor<T> { 
+    
+fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { 
+
+
+    fn graph_traversal<T>
+    (tensor: &Tensor<T>, level : usize) -> String
+    where T : Float + FromPrimitive + ScalarOperand + 'static  + std::fmt::Debug
+    { 
+        let indent = " ".to_string().repeat(level);
+
+        let lhs = match &tensor.lhs { 
+            None => "None".to_string(), 
+            Some(t) => graph_traversal(&*t, level + 1) 
+        };
+
+        let rhs = match &tensor.rhs { 
+            None => "None".to_string(), 
+            Some(t) => graph_traversal(&*t, level + 1) 
+        };
+
+        let op = match tensor.op { 
+            Some(t_op) => format!("{:?}", t_op),
+            None => "None".to_string()
+        };
+
+        format!(
+            "\n{}Value : {:?}\n{}Shape: {:?}\n{}Op: {}\n{}tracked: {}\n{}Grad: {:?}\n{}Lhs: {}\n{}Rhs: {}",
+            indent,
+            tensor.data,
+            indent,
+            tensor.shape,
+            indent,
+            op,
+            indent,
+            tensor.tracked,
+            indent,
+            &*tensor.grad.borrow(),
+            indent,
+            lhs,
+            indent,
+            rhs,
+        )
+    }
+
+    let computation_graph = graph_traversal(self, 0);
+    write!(f, "{}", computation_graph)
+    }
+}
+
+
+impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<T>> for Tensor<T> {
     type Error = TensorErr;
 
     /// create a tensor from a vector in row-first order. That is a vector of length **N** will create a tensor of
@@ -268,7 +320,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<T>> for Te
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
     type Error = TensorErr;
 
     /// condenses a vector of tensors into one tensor where each row in the tensor corresponds to each

@@ -28,7 +28,7 @@ pub enum UnaryFn<T: Float + 'static> {
 
 /// A struct that holds the gradient with respect to the parents of a tensor
 #[derive(Debug, PartialEq)]
-pub(crate) struct TensorGrad<T:  Float + FromPrimitive + ScalarOperand + 'static> {
+pub(crate) struct TensorGrad<T: Float + FromPrimitive + ScalarOperand + 'static> {
     pub lhs: Tensor<T>,
     pub rhs: Option<Tensor<T>>,
 }
@@ -43,7 +43,7 @@ pub enum MathFn<T: Float + 'static> {
 }
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tensor<T> {
     // take the derivative of a unary operation with respect to somee parent tensor
     pub(crate) fn d_unary_op(
         &self,
@@ -83,10 +83,14 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tens
     ) -> Result<TensorGrad<T>, TensorErr> {
         let output = match op {
             BinaryFn::Add => (grad.clone(), grad.clone()),
-            BinaryFn::Sub => unimplemented!(),
+            BinaryFn::Sub => (grad.clone(), -grad.clone()),
             // multiplication was done by two Tensors that are capable of being broadcasted
             BinaryFn::Mul => (rhs.data.deref() * grad, lhs.data.deref() * grad),
-            BinaryFn::Div => unimplemented!(),
+            // split the division rule into its two parts
+            BinaryFn::Div => (
+                grad / rhs.data.deref(),
+                (grad * lhs.data.deref()) / (rhs.data.deref() * rhs.data.deref()),
+            ),
             BinaryFn::MatMul => unimplemented!(),
         };
 
@@ -171,9 +175,11 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tens
     }
 }
 
+
+
 // ======================= Borrowed Implementations
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug > Add for &Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -182,7 +188,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug > Add 
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub for &Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -191,7 +197,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub 
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul for &Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -200,7 +206,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul 
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div for &Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -211,7 +217,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div 
 
 // ======================== Owned Implementations
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add for Tensor<T> {
     type Output = Tensor<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -220,7 +226,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add 
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub for Tensor<T> {
     type Output = Tensor<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -229,7 +235,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub 
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul for Tensor<T> {
     type Output = Tensor<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -238,7 +244,7 @@ impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul 
     }
 }
 
-impl<T:  Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div for Tensor<T> {
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div for Tensor<T> {
     type Output = Tensor<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -252,6 +258,7 @@ mod tests {
 
     use crate::math::{BinaryFn, MathFn, UnaryFn};
     use crate::*;
+    use std::ops::Deref;
 
     #[test]
     fn add_test() {
@@ -260,8 +267,8 @@ mod tests {
 
         let out = &tensor1 + &tensor2;
 
-        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor2);
-        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(out.rhs.as_ref().unwrap().deref(), &tensor2);
+        assert_eq!(out.lhs.as_ref().unwrap().deref(), &tensor1);
 
         assert_eq!(MathFn::TensorFns(BinaryFn::Add), out.op.unwrap());
 
@@ -280,8 +287,8 @@ mod tests {
 
         let out = &tensor1 - &tensor2;
 
-        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor2);
-        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(out.rhs.as_ref().unwrap().deref(), &tensor2);
+        assert_eq!(out.lhs.as_ref().unwrap().deref(), &tensor1);
 
         assert_eq!(MathFn::TensorFns(BinaryFn::Sub), out.op.unwrap());
 
@@ -300,8 +307,8 @@ mod tests {
 
         let out = &tensor1 * &tensor2;
 
-        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor2);
-        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(out.rhs.as_ref().unwrap().deref(), &tensor2);
+        assert_eq!(out.lhs.as_ref().unwrap().deref(), &tensor1);
 
         assert_eq!(MathFn::TensorFns(BinaryFn::Mul), out.op.unwrap());
 
@@ -320,8 +327,8 @@ mod tests {
 
         let out = &tensor1 / &tensor2;
 
-        assert_eq!(*out.rhs.as_ref().unwrap().borrow(), tensor2);
-        assert_eq!(*out.lhs.as_ref().unwrap().borrow(), tensor1);
+        assert_eq!(out.rhs.as_ref().unwrap().deref(), &tensor2);
+        assert_eq!(out.lhs.as_ref().unwrap().deref(), &tensor1);
 
         assert_eq!(MathFn::TensorFns(BinaryFn::Div), out.op.unwrap());
 
