@@ -89,7 +89,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
             // split the division rule into its two parts
             BinaryFn::Div => (
                 grad / rhs.data.deref(),
-                (grad * lhs.data.deref()) / (rhs.data.deref() * rhs.data.deref()),
+                -((grad * lhs.data.deref()) / (rhs.data.deref() * rhs.data.deref())),
             ),
             BinaryFn::MatMul => unimplemented!(),
         };

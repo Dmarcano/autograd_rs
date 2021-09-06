@@ -99,14 +99,12 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
     pub fn backward(&self) -> Result<(), TensorErr> {
         // TODO Improve the naive implementation using topological sort
 
+        // initilize the grad of the output as 1
+        let start_grad = Array2::ones([self.shape[0], self.shape[1]]);
+        self.send_grad(&Tensor::new_from_arr(start_grad));
+
         let mut stack = Vec::new();
-        // initialize the gradient of the output of the function
-        let mut start = self.clone();
-        let start_grad = Array2::ones([start.shape[0], start.shape[1]]);
-        println!("start grad!{:?}\n", start_grad);
-        
-        start.grad = std::rc::Rc::new(std::cell::RefCell::new(start_grad));
-        stack.push(Box::new(start));
+        stack.push(Box::new(self.clone()));
 
         while stack.len() > 0 {
             let curr_tensor = stack.pop().unwrap();
@@ -239,9 +237,7 @@ mod tests {
         assert_eq!(*tensor2.deps.borrow(), 3);
     }
 
-    fn example_fn(x1: &Tensor<f64>, x2: &Tensor<f64>) -> Tensor<f64> {
-        ((x1 / x2).sin() + (x1 / x2) - x2.exp()) * ((x1 / x2) + x2.exp())
-    }
+  
 
     #[test]
     fn send_grad_test() {
@@ -276,6 +272,11 @@ mod tests {
         // unimplemented!();
     }
 
+    fn example_fn(x1: &Tensor<f64>, x2: &Tensor<f64>) -> Tensor<f64> {
+        // example function used by https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf
+        ((x1 / x2).sin() + (x1 / x2) - x2.exp()) * ((x1 / x2) - x2.exp())
+    }
+
     #[test]
     fn backward_test() {
         // example taken from example in https://www.cs.princeton.edu/courses/archive/fall18/cos324/files/backprop.pdf
@@ -283,19 +284,19 @@ mod tests {
         let x2 = tensor!(0.5).tracked();
         let output = example_fn(&x1, &x2);
 
-        println!("{}", output);
-
         output.backward().unwrap();
-
-        println!("====================== AFTER BACKWARD =============");
-
-        println!("{}", output);
-
 
         let x1_grad = x1.grad.as_ref().deref().borrow().clone();
         let x2_grad = x2.grad.as_ref().deref().borrow().clone();
 
-        assert_eq!(x2_grad[[0, 0]], -13.7239);
-        assert_eq!(x1_grad[[0, 0]], 3.0118);
+        let x1_grad_expected = 3.0118;
+        let x2_grad_expected = -13.7239;
+
+        let x1_grad_abs_difference = (x1_grad[[0, 0]] - x1_grad_expected).abs();
+        let x2_grad_abs_difference = (x2_grad[[0, 0]] -x2_grad_expected).abs();
+
+        // our grad estimates are to that of 4 significat figures after the decimal
+        assert!(x1_grad_abs_difference < 1e-4);
+        assert!(x2_grad_abs_difference < 1e-4);
     }
 }
