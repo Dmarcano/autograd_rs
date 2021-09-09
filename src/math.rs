@@ -133,7 +133,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
             BinaryFn::Mul => self.data.deref() * other.data.deref(),
             BinaryFn::Sub => self.data.deref() - other.data.deref(),
             BinaryFn::Div => self.data.deref() / other.data.deref(),
-            BinaryFn::MatMul => todo!(),
+            BinaryFn::MatMul => self.data.dot(other.data.deref()),
         };
 
         Ok(output)
@@ -194,7 +194,24 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         self.operation(None, MathFn::UnaryFn(UnaryFn::Ln)).unwrap()
     }
 
-    /// Takes the matrix product of two 2-Dimensional Tensors
+    /// Takes the matrix product of two 2-Dimensional Tensors. 
+    /// The two Tensors must have dimensionas that agree and must be multipliable or it will panic
+    /// returns an error if the two tensors are not broadcastable
+    ///
+    /// Backed by ND-arrays implementation 
+    /// of dot
+    ///
+    /// ## Notes from ND-array
+    /// 
+    /// Perform matrix multiplication of rectangular arrays self and rhs.
+    /// Rhs may be either a one-dimensional or a two-dimensional array.
+    ///
+    /// If Rhs is two-dimensional, they array shapes must agree in the way that if self is M × N, then rhs is N × K.
+    /// Return a result array with shape M × K.
+    ///
+    /// Panics if shapes are incompatible or the number of elements in the result would overflow isize.
+    ///
+    /// Note: If enabled, uses blas gemv/gemm for elements of f32, f64 when memory layout allows. The default matrixmultiply backend is otherwise used for f32, f64 for all memory layouts.
     pub fn dot(&self, other: &Tensor<T>) -> Result<Tensor<T>, TensorErr> {
         self.operation(Some(other), MathFn::TensorFns(BinaryFn::MatMul))
     }

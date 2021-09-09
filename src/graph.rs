@@ -44,12 +44,18 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         }
     }
 
+    /// during forward mode computation, incements the dependecies of self, 
+    /// meaning that self now has one new child tensor who's derivative must first 
+    /// be calculated before calculating the derivative of self.
     fn increment_deps(&self) {
         if self.tracked {
             self.deps.borrow_mut().add_assign(1);
         };
     }
 
+    /// during the backwards pass of gradient calculation, a child of a tensor calls this 
+    /// method to decrement the parent's dependecies and signal that it has one less 
+    /// gradient needed to calculate it's own gradient
     fn decrement_deps(&self) { 
         if self.tracked {
             self.deps.borrow_mut().sub_assign(1);
@@ -63,7 +69,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         *curr_grad = &*curr_grad + grad.data.deref();
     }
 
-    /// TODO Test
+    // TODO Test
     fn calculate_grad(&self) -> Result<TensorGrad<T>, TensorErr> {
         // get the computed gradient as either the root (None)
         // or from the childrens previous backwards passes (Some)
@@ -112,7 +118,6 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
             // to calculate grad
             let cur_grad = curr_tensor.calculate_grad()?;
 
-            // TODO cleanup the use of RefCell it actually is not needed
             match curr_tensor.clone().lhs.as_ref() {
                 None => {
                     // TODO add error for non-leaf nodes that are not differentiable
