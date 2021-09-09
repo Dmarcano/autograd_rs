@@ -120,7 +120,14 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         other: &Tensor<T>,
         op: BinaryFn,
     ) -> Result<Array2<T>, TensorErr> {
-        // TODO check if the tensors are broadcastable
+        
+        if !Tensor::can_broadcast(self, other) {
+            // TODO this is a hack for formatting a tensor broadcast error with the shape of the tensor 
+            // while not using a generic parameter on Tensor Err. Probably refactor tensor error to avoid this
+            let sizes = format!("lhs shape: {:?} rhs shape: {:?}", self.data.shape(), other.data.shape() ); 
+            return Err(TensorErr::BroadcastError(sizes))
+        }; 
+
         let output = match op {
             BinaryFn::Add => self.data.deref() + other.data.deref(),
             BinaryFn::Mul => self.data.deref() * other.data.deref(),
@@ -149,6 +156,24 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
     pub fn exp(&self) -> Tensor<T> {
         self.operation(None, MathFn::UnaryFn(UnaryFn::Exp::<T>))
             .unwrap()
+    }
+
+    /// takes two Tensors lhs and rhs respectively and 
+    /// returns true if they can be broadcasted together
+    pub fn can_broadcast(lhs: &Tensor<T>, rhs: &Tensor<T>) -> bool {
+        let lhs_shape = lhs.data.shape();
+        let rhs_shape = rhs.data.shape();
+        let lhs_rank = lhs_shape.len();
+        let rhs_rank = rhs_shape.len();
+        if lhs_rank != rhs_rank {
+            return false;
+        }
+        for i in 0..lhs_rank {
+            if lhs_shape[i] != rhs_shape[i] {
+                return false;
+            }
+        }
+        return true;
     }
 
     /// takes every element in a Tensor and creates a new tensor with every element equal to
@@ -547,7 +572,7 @@ mod tests {
         assert!(abs_diff < 1e-10);
     }
 
-    // #[test]
+    #[test]
     fn d_powf_test() {
         unimplemented!();
     }
@@ -573,7 +598,7 @@ mod tests {
         assert!(abs_diff < 1e-10);
     }
 
-    // #[test]
+    #[test]
     fn d_log_test() {
         // taking the derivative of y = log(x, a) aka log_a(x) where
         // x = 2.0 a = 5.0
@@ -592,5 +617,15 @@ mod tests {
 
         let abs_diff = (output.lhs.data[[0, 0]] - expected).abs();
         assert!(abs_diff < 1e-10);
+    }
+
+    #[test]
+    fn mat_mul_test() { 
+        unimplemented!()
+    }
+
+    #[test]
+    fn broadcast_error_test() { 
+        unimplemented!()
     }
 }

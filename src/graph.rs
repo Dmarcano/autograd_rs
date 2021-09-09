@@ -254,13 +254,15 @@ mod tests {
         assert_eq!(tensor.grad.borrow()[[1, 2]], 3.0);
     }
 
-    // #[test]
+    #[test]
     fn calculate_grad_test() {
         unimplemented!();
     }
 
     #[test]
-    fn graph_creation_test() {}
+    fn graph_creation_test() {
+        unimplemented!()
+    }
 
     #[test]
     fn backward_unary_test() {
