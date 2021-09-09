@@ -24,17 +24,17 @@ I'm going to introduce two useful ways to represent this problem. One as a **lis
 
 *(Do note that the \\( \times \\) operator here means some sort of multiplication between scalars/matrices with other scalars/matrices. So no cross products)*
 
-This list above is sometimes called an **execution trace** or a **wengert list** but the most important part is that it separates our function into a set of intermediate steps that makes it easier to reason about how to propagate derivatives. 
+This list above is sometimes called an **execution trace** or a **computational list** but the most important part is that it separates our function into a set of intermediate steps that makes it easier to reason about how to propagate derivatives. 
 
 I think this property is better exemplefied by the graph representation of an execution trace.
 
-<center><img src="images/Example Execution Graph.png">Graph of Execution Trace</center>
+<center><img src="images/Example_Execution_Graph.png">Graph of Execution Trace</center>
 
 To properly understand what this graph means we first must define what each node means.
-Each node in this graph primarily represents an **operator** of some sorts. Let's look at an example for node 5 to see what this means.
+Each node in this graph primarily represents an **operator** of some sorts. Let's look at an example for node \\( v_{4} \\) to see what this means.
 
 
-<center><img src="images/Sample Node V5.png">The node of the value V5 is the addition operator on two input variables</center>
+<center><img src="images/Sample_Node_ V5.png">The node of the value V5 is the addition operator on two input variables</center>
 
 Each node in our graph is some sort of elementary operation. This includes operators like addition, multiplication, or functions like 
 trigonometric functions or exponential functions to name a few. A node takes an input depending on the type of function it is. In the case
