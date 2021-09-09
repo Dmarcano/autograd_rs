@@ -121,19 +121,24 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         op: BinaryFn,
     ) -> Result<Array2<T>, TensorErr> {
         
-        if !Tensor::can_broadcast(self, other) {
+        let broadcastable =  Tensor::can_broadcast(self, other);
+        let matrix_mulable = Tensor::check_matrix_multiplication(self, other);
+
+        if op == BinaryFn::MatMul && !matrix_mulable { 
+
+        } else if !broadcastable && op != BinaryFn::MatMul { 
             // TODO this is a hack for formatting a tensor broadcast error with the shape of the tensor 
             // while not using a generic parameter on Tensor Err. Probably refactor tensor error to avoid this
             let sizes = format!("lhs shape: {:?} rhs shape: {:?}", self.data.shape(), other.data.shape() ); 
             return Err(TensorErr::BroadcastError(sizes))
-        }; 
+        }
 
         let output = match op {
             BinaryFn::Add => self.data.deref() + other.data.deref(),
             BinaryFn::Mul => self.data.deref() * other.data.deref(),
             BinaryFn::Sub => self.data.deref() - other.data.deref(),
             BinaryFn::Div => self.data.deref() / other.data.deref(),
-            BinaryFn::MatMul => todo!(),
+            BinaryFn::MatMul => self.data.dot(other.data.deref()),
         };
 
         Ok(output)
@@ -149,6 +154,14 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
     pub fn cos(&self) -> Tensor<T> {
         self.operation(None, MathFn::UnaryFn(UnaryFn::Cos::<T>))
             .unwrap()
+    }
+
+    /// checks if matrix multiplication is possible between two tensors
+    fn check_matrix_multiplication(lhs: &Tensor<T>, rhs: &Tensor<T>) -> bool {
+        if lhs.data.shape()[1] != rhs.data.shape()[0] {
+            return false;
+        }
+        true
     }
 
     /// takes every element in a Tensor and creates a new tensor with every element equal to
@@ -194,7 +207,24 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         self.operation(None, MathFn::UnaryFn(UnaryFn::Ln)).unwrap()
     }
 
-    /// Takes the matrix product of two 2-Dimensional Tensors
+    /// Takes the matrix product of two 2-Dimensional Tensors. 
+    /// The two Tensors must have dimensionas that agree and must be multipliable or it will panic
+    /// returns an error if the two tensors are not broadcastable
+    ///
+    /// Backed by ND-arrays implementation 
+    /// of dot
+    ///
+    /// ## Notes from ND-array
+    /// 
+    /// Perform matrix multiplication of rectangular arrays self and rhs.
+    /// Rhs may be either a one-dimensional or a two-dimensional array.
+    ///
+    /// If Rhs is two-dimensional, they array shapes must agree in the way that if self is M × N, then rhs is N × K.
+    /// Return a result array with shape M × K.
+    ///
+    /// Panics if shapes are incompatible or the number of elements in the result would overflow isize.
+    ///
+    /// Note: If enabled, uses blas gemv/gemm for elements of f32, f64 when memory layout allows. The default matrixmultiply backend is otherwise used for f32, f64 for all memory layouts.
     pub fn dot(&self, other: &Tensor<T>) -> Result<Tensor<T>, TensorErr> {
         self.operation(Some(other), MathFn::TensorFns(BinaryFn::MatMul))
     }
@@ -280,7 +310,6 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div f
 
 #[cfg(test)]
 mod tests {
-
     use crate::math::{BinaryFn, MathFn, UnaryFn};
     use crate::*;
     use std::ops::Deref;
@@ -620,8 +649,23 @@ mod tests {
     }
 
     #[test]
-    fn mat_mul_test() { 
-        unimplemented!()
+    fn mat_mul_2d_test() { 
+        // 2x3
+        let tensor_1 = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
+        // 3x2
+        let tensor_2 = tensor!(tensor!(2.0, 2.0), tensor!(3.0, 3.0), tensor!(4.0, 4.0)).tracked();
+
+        let output_2x2 = tensor_1.dot(&tensor_2).unwrap();
+        let expected_vals = tensor!(tensor!(20.0, 20.0), tensor!(47.0, 47.0)); 
+
+        assert_eq!(*output_2x2.data.clone(), *expected_vals.data.clone() );
+        assert_eq!(output_2x2.op, Some(MathFn::TensorFns(BinaryFn::MatMul)));
+
+        let output_3x3 = tensor_2.dot(&tensor_1).unwrap(); 
+        let expected_vals = tensor!(tensor!(10.0, 14.0, 18.0), tensor!(15.0, 21.0, 27.0), tensor!(20.0, 28.0, 36.0));
+
+        assert_eq!(*output_3x3.data.clone(), *expected_vals.data.clone() );
+        assert_eq!(output_3x3.op, Some(MathFn::TensorFns(BinaryFn::MatMul)));
     }
 
     #[test]
