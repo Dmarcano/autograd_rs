@@ -44,8 +44,8 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         }
     }
 
-    /// during forward mode computation, incements the dependecies of self, 
-    /// meaning that self now has one new child tensor who's derivative must first 
+    /// during forward mode computation, incements the dependecies of self,
+    /// meaning that self now has one new child tensor who's derivative must first
     /// be calculated before calculating the derivative of self.
     fn increment_deps(&self) {
         if self.tracked {
@@ -53,10 +53,10 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         };
     }
 
-    /// during the backwards pass of gradient calculation, a child of a tensor calls this 
-    /// method to decrement the parent's dependecies and signal that it has one less 
+    /// during the backwards pass of gradient calculation, a child of a tensor calls this
+    /// method to decrement the parent's dependecies and signal that it has one less
     /// gradient needed to calculate it's own gradient
-    fn decrement_deps(&self) { 
+    fn decrement_deps(&self) {
         if self.tracked {
             self.deps.borrow_mut().sub_assign(1);
         };
@@ -242,8 +242,6 @@ mod tests {
         assert_eq!(*tensor2.deps.borrow(), 3);
     }
 
-  
-
     #[test]
     fn send_grad_test() {
         let tensor = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
@@ -300,7 +298,7 @@ mod tests {
         let x2_grad_expected = -13.7239;
 
         let x1_grad_abs_difference = (x1_grad[[0, 0]] - x1_grad_expected).abs();
-        let x2_grad_abs_difference = (x2_grad[[0, 0]] -x2_grad_expected).abs();
+        let x2_grad_abs_difference = (x2_grad[[0, 0]] - x2_grad_expected).abs();
 
         // our grad estimates are to that of 4 significat figures after the decimal
         assert!(x1_grad_abs_difference < 1e-4);

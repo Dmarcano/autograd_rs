@@ -249,34 +249,32 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Vec<T>>> fo
     }
 }
 
+impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> std::fmt::Display
+    for Tensor<T>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        fn graph_traversal<T>(tensor: &Tensor<T>, level: usize) -> String
+        where
+            T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug,
+        {
+            let indent = " ".to_string().repeat(level);
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> std::fmt::Display for Tensor<T> { 
-    
-fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { 
+            let lhs = match &tensor.lhs {
+                None => "None".to_string(),
+                Some(t) => graph_traversal(&*t, level + 1),
+            };
 
+            let rhs = match &tensor.rhs {
+                None => "None".to_string(),
+                Some(t) => graph_traversal(&*t, level + 1),
+            };
 
-    fn graph_traversal<T>
-    (tensor: &Tensor<T>, level : usize) -> String
-    where T : Float + FromPrimitive + ScalarOperand + 'static  + std::fmt::Debug
-    { 
-        let indent = " ".to_string().repeat(level);
+            let op = match tensor.op {
+                Some(t_op) => format!("{:?}", t_op),
+                None => "None".to_string(),
+            };
 
-        let lhs = match &tensor.lhs { 
-            None => "None".to_string(), 
-            Some(t) => graph_traversal(&*t, level + 1) 
-        };
-
-        let rhs = match &tensor.rhs { 
-            None => "None".to_string(), 
-            Some(t) => graph_traversal(&*t, level + 1) 
-        };
-
-        let op = match tensor.op { 
-            Some(t_op) => format!("{:?}", t_op),
-            None => "None".to_string()
-        };
-
-        format!(
+            format!(
             "\n{}Value : {:?}\n{}Shape: {:?}\n{}Op: {}\n{}tracked: {}\n{}Grad: {:?}\n{}Lhs: {}\n{}Rhs: {}",
             indent,
             tensor.data,
@@ -293,13 +291,12 @@ fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::f
             indent,
             rhs,
         )
-    }
+        }
 
-    let computation_graph = graph_traversal(self, 0);
-    write!(f, "{}", computation_graph)
+        let computation_graph = graph_traversal(self, 0);
+        write!(f, "{}", computation_graph)
     }
 }
-
 
 impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<T>> for Tensor<T> {
     type Error = TensorErr;

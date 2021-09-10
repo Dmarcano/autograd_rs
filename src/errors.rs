@@ -1,14 +1,12 @@
 use ndarray::ShapeError;
 use thiserror::Error;
 
-
 #[derive(Debug, Clone, Error)]
 pub enum TensorErr {
-
-    #[error("unable to broadcast tensors together with shapes: {0}", )]
+    #[error("unable to broadcast tensors together with shapes: {0}")]
     BroadcastError(String),
 
-    #[error("unable to multiply tensors together with shapes: {0}", )]
+    #[error("unable to multiply tensors together with shapes: {0}")]
     MatMulShapeError(String),
 
     // convert the shape error to suit the API. Otherwise one can instead return a Box of the type of error to perhaps
