@@ -2,7 +2,7 @@
 //!
 
 use crate::{
-    math::{MathFn, TensorGrad},
+    ops::{MathFn, TensorGrad},
     Tensor, TensorErr,
 };
 use ndarray::{Array2, ScalarOperand};
@@ -150,7 +150,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
 
 #[cfg(test)]
 mod tests {
-    use crate::math::{BinaryFn, MathFn, UnaryFn};
+    use crate::ops::{BinaryFn, MathFn, UnaryFn};
     use crate::*;
     use std::ops::Deref;
 

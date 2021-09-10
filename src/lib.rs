@@ -10,7 +10,8 @@ use std::{
 mod errors;
 pub mod forward_mode;
 mod graph;
-mod math;
+mod ops;
+
 
 /// A Tensor is the most basic data type in the automatic differentiation engine. Performs many basic mathematic functions and keeps track
 /// of the underlying computation graph.
@@ -34,7 +35,7 @@ pub struct Tensor<T: Float + FromPrimitive + ScalarOperand + 'static> {
     // solely defined in one scope (due to rusts lifetime rules and generally to prevent dangling pointers)
     lhs: Option<Box<Tensor<T>>>,
     rhs: Option<Box<Tensor<T>>>,
-    op: Option<math::MathFn<T>>,
+    op: Option<ops::MathFn<T>>,
     // keeps track of gradients as they are passed in to the current tensor
     pub(crate) grad: Rc<RefCell<Array2<T>>>,
     // keeps track of the number of dependencies/gradients that need to be sent to
@@ -140,7 +141,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static> Tensor<T> {
     }
 
     /// Stores a function that was used to create a Specific tensor
-    pub(crate) fn with_op(self, op: math::MathFn<T>) -> Self {
+    pub(crate) fn with_op(self, op: ops::MathFn<T>) -> Self {
         Tensor {
             tracked: false,
             op: Some(op),
