@@ -91,7 +91,11 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
                 grad / rhs.data.deref(),
                 -((grad * lhs.data.deref()) / (rhs.data.deref() * rhs.data.deref())),
             ),
-            BinaryFn::MatMul => unimplemented!(),
+            BinaryFn::MatMul => {
+                let lhs_grad = grad.dot(&rhs.data.t());
+                let rhs_grad = lhs.data.t().dot(grad);
+                (lhs_grad, rhs_grad)
+            },
         };
 
         let out_grad = TensorGrad {
@@ -124,11 +128,15 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         let broadcastable =  Tensor::can_broadcast(self, other);
         let matrix_mulable = Tensor::check_matrix_multiplication(self, other);
 
+        // TODO this is a hack for formatting a tensor broadcast error with the shape of the tensor 
+        // while not using a generic parameter on Tensor Err. Probably refactor tensor error to avoid this
         if op == BinaryFn::MatMul && !matrix_mulable { 
 
+            let sizes = format!("lhs shape: {:?} rhs shape: {:?}", self.data.shape(), other.data.shape() ); 
+            return Err(TensorErr::MatMulShapeError(sizes))
+
         } else if !broadcastable && op != BinaryFn::MatMul { 
-            // TODO this is a hack for formatting a tensor broadcast error with the shape of the tensor 
-            // while not using a generic parameter on Tensor Err. Probably refactor tensor error to avoid this
+
             let sizes = format!("lhs shape: {:?} rhs shape: {:?}", self.data.shape(), other.data.shape() ); 
             return Err(TensorErr::BroadcastError(sizes))
         }
@@ -157,7 +165,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
     }
 
     /// checks if matrix multiplication is possible between two tensors
-    fn check_matrix_multiplication(lhs: &Tensor<T>, rhs: &Tensor<T>) -> bool {
+    pub fn check_matrix_multiplication(lhs: &Tensor<T>, rhs: &Tensor<T>) -> bool {
         if lhs.data.shape()[1] != rhs.data.shape()[0] {
             return false;
         }
@@ -670,6 +678,12 @@ mod tests {
 
     #[test]
     fn broadcast_error_test() { 
+        unimplemented!()
+    }
+
+    #[test]
+    fn d_mat_mul_test() { 
+        
         unimplemented!()
     }
 }
