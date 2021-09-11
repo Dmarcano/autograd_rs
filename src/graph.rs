@@ -22,6 +22,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         let output = match op {
             MathFn::TensorFns(func) => self.binary_op(other.unwrap(), func),
             MathFn::UnaryFn(func) => self.unary_op(func),
+            MathFn::ActivationFn(_) => todo!(),
         }?;
 
         // 2 update the dependencies of tensors if they are tracked
@@ -88,6 +89,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
                 &*self.rhs.as_ref().unwrap(),
             ),
             MathFn::UnaryFn(func) => self.d_unary_op(func, &*self.lhs.as_ref().unwrap()),
+            MathFn::ActivationFn(_) => todo!(),
         };
         output
     }

@@ -2,10 +2,13 @@
 
 mod binary_ops;
 mod unary_ops;
+mod activation;
 
 use crate::Tensor;
 use ndarray::ScalarOperand;
 use num_traits::{cast::FromPrimitive, Float};
+
+use self::activation::ActivationFuncs;
 
 /// A set of possible functions between two tensors.
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -42,4 +45,5 @@ pub(crate) struct TensorGrad<T: Float + FromPrimitive + ScalarOperand + 'static>
 pub enum MathFn<T: Float + 'static> {
     TensorFns(BinaryFn),
     UnaryFn(UnaryFn<T>),
+    ActivationFn(ActivationFuncs<T>)
 }
