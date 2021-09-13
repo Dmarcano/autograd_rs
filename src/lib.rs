@@ -12,7 +12,6 @@ pub mod forward_mode;
 mod graph;
 mod ops;
 
-
 /// A Tensor is the most basic data type in the automatic differentiation engine. Performs many basic mathematic functions and keeps track
 /// of the underlying computation graph.
 #[derive(Debug, PartialEq)]

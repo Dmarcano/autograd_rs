@@ -1,8 +1,8 @@
 //! This module corresponds to the mathematical operations that can be performed on a Tensor
 
+mod activation;
 mod binary_ops;
 mod unary_ops;
-mod activation;
 
 use crate::Tensor;
 use ndarray::ScalarOperand;
@@ -45,5 +45,5 @@ pub(crate) struct TensorGrad<T: Float + FromPrimitive + ScalarOperand + 'static>
 pub enum MathFn<T: Float + 'static> {
     TensorFns(BinaryFn),
     UnaryFn(UnaryFn<T>),
-    ActivationFn(ActivationFuncs<T>)
+    ActivationFn(ActivationFuncs<T>),
 }
