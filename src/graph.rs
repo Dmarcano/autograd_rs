@@ -1,8 +1,11 @@
 //! This module is mainly concerned with creating the computation graph of Tensor operations.
 //!
 
-use crate::{Tensor, TensorErr, TensorFloat, ops::{MathFn, TensorGrad}};
-use ndarray::{Array2};
+use crate::{
+    ops::{MathFn, TensorGrad},
+    Tensor, TensorErr, TensorFloat,
+};
+use ndarray::Array2;
 use std::ops::{AddAssign, Deref, SubAssign};
 
 impl<T: TensorFloat> Tensor<T> {

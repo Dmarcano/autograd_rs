@@ -1,5 +1,9 @@
-use crate::{Tensor, TensorFloat, errors::TensorErr, ops::{BinaryFn, MathFn, TensorGrad}};
-use ndarray::{Array2};
+use crate::{
+    errors::TensorErr,
+    ops::{BinaryFn, MathFn, TensorGrad},
+    Tensor, TensorFloat,
+};
+use ndarray::Array2;
 use std::ops::{Add, Deref, Div, Mul, Sub};
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.

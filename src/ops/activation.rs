@@ -103,8 +103,8 @@ impl<T: TensorFloat> Tensor<T> {
     }
 }
 
-pub trait ActivationFuction<T: TensorFloat> { 
-    fn activation(&self,  tensor : &Tensor<T>);
+pub trait ActivationFuction<T: TensorFloat> {
+    fn activation(&self, tensor: &Tensor<T>);
 }
 
 #[cfg(test)]

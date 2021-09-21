@@ -4,8 +4,8 @@ mod activation;
 mod binary_ops;
 mod unary_ops;
 
-use crate::{Tensor, TensorFloat};
 use self::activation::ActivationFuncs;
+use crate::{Tensor, TensorFloat};
 
 /// A set of possible functions between two tensors.
 #[derive(Copy, Clone, Debug, PartialEq)]

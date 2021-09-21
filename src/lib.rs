@@ -8,15 +8,21 @@ use std::{
 };
 
 mod errors;
-pub mod layer;
 pub mod forward_mode;
 mod graph;
+pub mod layer;
 mod ops;
 
-pub trait TensorFloat : Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone  + std::fmt::Debug{ }
+/// A trait that defines the floating-point numbers that are expected to be used by a Tensor
+pub trait TensorFloat:
+    Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone + std::fmt::Debug
+{
+}
 
-impl<T> TensorFloat for T 
-where T : Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone + std::fmt::Debug{}
+impl<T> TensorFloat for T where
+    T: Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone + std::fmt::Debug
+{
+}
 
 /// A Tensor is the most basic data type in the automatic differentiation engine. Performs many basic mathematic functions and keeps track
 /// of the underlying computation graph.
@@ -255,9 +261,7 @@ impl<T: TensorFloat> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     }
 }
 
-impl<T: TensorFloat> std::fmt::Display
-    for Tensor<T>
-{
+impl<T: TensorFloat> std::fmt::Display for Tensor<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         fn graph_traversal<T>(tensor: &Tensor<T>, level: usize) -> String
         where
