@@ -1,15 +1,11 @@
 //! This module is mainly concerned with creating the computation graph of Tensor operations.
 //!
 
-use crate::{
-    ops::{MathFn, TensorGrad},
-    Tensor, TensorErr,
-};
-use ndarray::{Array2, ScalarOperand};
-use num_traits::{cast::FromPrimitive, Float};
+use crate::{Tensor, TensorErr, TensorFloat, ops::{MathFn, TensorGrad}};
+use ndarray::{Array2};
 use std::ops::{AddAssign, Deref, SubAssign};
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tensor<T> {
+impl<T: TensorFloat> Tensor<T> {
     /// the general-operation function performs the necessary book-keeping before and after an operation to be used for a backwards pass.
     /// generally this involves using the given operation to save as the operation that will create the next subsequent tensor and
     /// also providing references to the parent tensors
