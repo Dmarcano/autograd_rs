@@ -7,8 +7,9 @@ use crate::*;
 
 use super::MathFn;
 
+/// The activation functions that can be used by Tensors and Network Layers
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ActivationFuncs<T: Float + 'static> {
+pub enum ActivationFuncs<T: TensorFloat> {
     ReLu,
     LeakyReLu(T),
     Sigmoid,
@@ -97,14 +98,57 @@ impl<T: TensorFloat> Tensor<T> {
             .unwrap()
     }
 
-    pub fn leay_relu(&self, base: T) -> Tensor<T> {
+    pub fn leaky_relu(&self, base: T) -> Tensor<T> {
         self.operation(None, MathFn::ActivationFn(ActivationFuncs::LeakyReLu(base)))
             .unwrap()
     }
 }
 
+/// An activation function that takes a Tensor and applies the proper activation for it. 
+/// Specific activation trait objects are used as a convenience when implementing neural networks
 pub trait ActivationFuction<T: TensorFloat> {
-    fn activation(&self, tensor: &Tensor<T>);
+    fn activation(&self, tensor: &Tensor<T>) -> Tensor<T>;
+}
+
+/// The Rectified Linear 
+pub struct ReLu;
+
+impl<T: TensorFloat> ActivationFuction<T> for ReLu {
+    fn activation(&self, tensor: &Tensor<T>) ->Tensor<T> {
+        tensor.relu()
+    }
+}
+
+/// The Sigmoid Activation function takes a tensor and applies the sigmoid function to it
+/// that is it takes 
+///
+pub struct Sigmoid;
+
+impl<T: TensorFloat> ActivationFuction<T> for Sigmoid {
+    fn activation(&self, tensor: &Tensor<T>) ->Tensor<T> {
+        tensor.sigmoid()
+    }
+}
+
+/// The hyperbolic tangent activation function takes an output from a network and 
+pub struct TanH;
+
+impl<T: TensorFloat> ActivationFuction<T> for TanH {
+    fn activation(&self, tensor: &Tensor<T>) ->Tensor<T> {
+        tensor.tanh()
+    }
+}
+
+/// Another more specific ReLU that allows someone to 
+// TODO 
+struct LeakyRelu<T : TensorFloat> { 
+    base : T 
+}
+
+impl<T: TensorFloat> ActivationFuction<T> for LeakyRelu<T> {
+    fn activation(&self, tensor: &Tensor<T>) ->Tensor<T> {
+        tensor.leaky_relu(self.base)
+    }
 }
 
 #[cfg(test)]

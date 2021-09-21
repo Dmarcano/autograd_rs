@@ -1,6 +1,6 @@
 //! This module corresponds to the mathematical operations that can be performed on a Tensor
 
-mod activation;
+pub mod activation;
 mod binary_ops;
 mod unary_ops;
 
