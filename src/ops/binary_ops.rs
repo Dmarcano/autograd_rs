@@ -1,14 +1,9 @@
-use crate::{
-    errors::TensorErr,
-    ops::{BinaryFn, MathFn, TensorGrad},
-    Tensor,
-};
-use ndarray::{Array2, ScalarOperand};
-use num_traits::{cast::FromPrimitive, Float};
+use crate::{Tensor, TensorFloat, errors::TensorErr, ops::{BinaryFn, MathFn, TensorGrad}};
+use ndarray::{Array2};
 use std::ops::{Add, Deref, Div, Mul, Sub};
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tensor<T> {
+impl<T: TensorFloat> Tensor<T> {
     /// take the derivative of a binary function with respect to one of it's parents
     pub(crate) fn d_binary_op(
         &self,
@@ -130,7 +125,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
 
 // ======================= Borrowed Implementations
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add for &Tensor<T> {
+impl<T: TensorFloat> Add for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -139,7 +134,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add f
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub for &Tensor<T> {
+impl<T: TensorFloat> Sub for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -148,7 +143,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub f
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul for &Tensor<T> {
+impl<T: TensorFloat> Mul for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -157,7 +152,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul f
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div for &Tensor<T> {
+impl<T: TensorFloat> Div for &Tensor<T> {
     type Output = Tensor<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -168,7 +163,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div f
 
 // ======================== Owned Implementations
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add for Tensor<T> {
+impl<T: TensorFloat> Add for Tensor<T> {
     type Output = Tensor<T>;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -177,7 +172,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Add f
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub for Tensor<T> {
+impl<T: TensorFloat> Sub for Tensor<T> {
     type Output = Tensor<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -186,7 +181,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Sub f
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul for Tensor<T> {
+impl<T: TensorFloat> Mul for Tensor<T> {
     type Output = Tensor<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -195,7 +190,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Mul f
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Div for Tensor<T> {
+impl<T: TensorFloat> Div for Tensor<T> {
     type Output = Tensor<T>;
 
     fn div(self, rhs: Self) -> Self::Output {

@@ -8,14 +8,20 @@ use std::{
 };
 
 mod errors;
+pub mod layer;
 pub mod forward_mode;
 mod graph;
 mod ops;
 
+pub trait TensorFloat : Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone  + std::fmt::Debug{ }
+
+impl<T> TensorFloat for T 
+where T : Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone + std::fmt::Debug{}
+
 /// A Tensor is the most basic data type in the automatic differentiation engine. Performs many basic mathematic functions and keeps track
 /// of the underlying computation graph.
 #[derive(Debug, PartialEq)]
-pub struct Tensor<T: Float + FromPrimitive + ScalarOperand + 'static> {
+pub struct Tensor<T: TensorFloat> {
     /// ND array backing the Tensor Data.
     ///
     /// ### Note on RC
@@ -45,7 +51,7 @@ pub struct Tensor<T: Float + FromPrimitive + ScalarOperand + 'static> {
     deps: Rc<RefCell<usize>>,
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static> Tensor<T> {
+impl<T: TensorFloat> Tensor<T> {
     pub fn get_strides(&self) -> &[isize] {
         self.data.strides()
     }
@@ -213,7 +219,7 @@ macro_rules! tensor {
     };
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static> Clone for Tensor<T> {
+impl<T: TensorFloat> Clone for Tensor<T> {
     fn clone(&self) -> Self {
         Tensor {
             data: self.data.clone(),
@@ -228,13 +234,13 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static> Clone for Tensor<T> {
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static> From<Array2<T>> for Tensor<T> {
+impl<T: TensorFloat> From<Array2<T>> for Tensor<T> {
     fn from(array: Array2<T>) -> Self {
         Tensor::new_from_arr(array)
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Vec<T>>> for Tensor<T> {
+impl<T: TensorFloat> TryFrom<Vec<Vec<T>>> for Tensor<T> {
     type Error = TensorErr;
     /// tries to build a Tensor from a Vector of vectors. The inner vectors are treated in row order
     ///
@@ -249,7 +255,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Vec<T>>> fo
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> std::fmt::Display
+impl<T: TensorFloat> std::fmt::Display
     for Tensor<T>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
@@ -298,7 +304,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> std::
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<T>> for Tensor<T> {
+impl<T: TensorFloat> TryFrom<Vec<T>> for Tensor<T> {
     type Error = TensorErr;
 
     /// create a tensor from a vector in row-first order. That is a vector of length **N** will create a tensor of
@@ -317,7 +323,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<T>> for Ten
     }
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
+impl<T: TensorFloat> TryFrom<Vec<Tensor<T>>> for Tensor<T> {
     type Error = TensorErr;
 
     /// condenses a vector of tensors into one tensor where each row in the tensor corresponds to each

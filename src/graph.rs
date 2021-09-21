@@ -22,7 +22,7 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         let output = match op {
             MathFn::TensorFns(func) => self.binary_op(other.unwrap(), func),
             MathFn::UnaryFn(func) => self.unary_op(func),
-            MathFn::ActivationFn(_) => todo!(),
+            MathFn::ActivationFn(func) => self.activation_func(func),
         }?;
 
         // 2 update the dependencies of tensors if they are tracked
@@ -89,7 +89,9 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
                 &*self.rhs.as_ref().unwrap(),
             ),
             MathFn::UnaryFn(func) => self.d_unary_op(func, &*self.lhs.as_ref().unwrap()),
-            MathFn::ActivationFn(_) => todo!(),
+            MathFn::ActivationFn(func) => {
+                self.d_activation_func(func, &*self.lhs.as_ref().unwrap())
+            }
         };
         output
     }
@@ -257,6 +259,11 @@ mod tests {
         assert_eq!(tensor.grad.borrow()[[1, 0]], 1.0);
         assert_eq!(tensor.grad.borrow()[[1, 1]], 2.0);
         assert_eq!(tensor.grad.borrow()[[1, 2]], 3.0);
+    }
+
+    #[test]
+    fn activation_fn_test() {
+        todo!()
     }
 
     #[test]

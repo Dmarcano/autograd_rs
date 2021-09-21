@@ -1,13 +1,8 @@
-use crate::{
-    errors::TensorErr,
-    ops::{MathFn, TensorGrad, UnaryFn},
-    Tensor,
-};
-use ndarray::{Array2, ScalarOperand};
-use num_traits::{cast::FromPrimitive, Float};
+use crate::{Tensor, TensorFloat, errors::TensorErr, ops::{MathFn, TensorGrad, UnaryFn}};
+use ndarray::{Array2};
 
 // floating point numbers last the entire time that the Tensor holds it so we can add it to the trait bounds.
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tensor<T> {
+impl<T: TensorFloat> Tensor<T> {
     // take the derivative of a unary operation with respect to somee parent tensor
     pub(crate) fn d_unary_op(
         &self,

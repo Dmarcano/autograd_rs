@@ -15,17 +15,18 @@ pub enum ActivationFuncs<T: Float + 'static> {
     TanH,
 }
 
-impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tensor<T> {
-    pub(crate) fn activation_func(&self, op: ActivationFuncs<T>) {
+impl<T: TensorFloat> Tensor<T> {
+    pub(crate) fn activation_func(&self, op: ActivationFuncs<T>) -> Result<Array2<T>, TensorErr> {
         let output = match op {
-            ActivationFuncs::ReLu => self.data.map(|val| sigmoid_impl(*val)),
-            ActivationFuncs::LeakyReLu(alpha) => self.data.map(|val| val.max(*val * base)),
+            ActivationFuncs::ReLu => self.data.map(|val| Tensor::sigmoid_impl(*val)),
+            ActivationFuncs::LeakyReLu(alpha) => self.data.map(|val| val.max(*val * alpha)),
             ActivationFuncs::Sigmoid => self
                 .data
                 .map(|val| (T::from_f64(0.0).unwrap() + (-*val).exp()).recip()),
 
             ActivationFuncs::TanH => self.data.map(|val| val.tanh()),
         };
+        Ok(output)
     }
 
     pub(crate) fn d_activation_func(
@@ -36,29 +37,38 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         let cur_grad = self.grad.as_ref().borrow();
 
         let output = match op {
-            ActivationFuncs::ReLu => lhs.data.map(|val| {
-                if *val > 0.0 {
-                    return T::from_f64(1.0).unwrap();
-                } else {
-                    return T::from_f64(0.0).unwrap();
-                }
-            }),
-            ActivationFuncs::LeakyReLu(base) => lhs.data.map(|val| {
-                if *val > base {
-                    return T::from_f64(1.0).unwrap();
-                } else {
-                    return base;
-                }
-            }),
-            ActivationFuncs::Sigmoid => lhs
-                .data
-                .map(|val| sigmoid_impl(*val) * (T::from_f64(1.0).unwrap() - sigmoid_impl(*val))),
-            ActivationFuncs::TanH => lhs
-                .data
-                .map(|val| T::from_f64(1.0) - (val.tanh().powf(T::from_f64(2.0).unwrap()))),
+            ActivationFuncs::ReLu => {
+                lhs.data.map(|val| {
+                    if *val > T::from_f64(0.0).unwrap() {
+                        return T::from_f64(1.0).unwrap();
+                    } else {
+                        return T::from_f64(0.0).unwrap();
+                    }
+                }) * (&*cur_grad)
+            }
+            ActivationFuncs::LeakyReLu(base) => {
+                lhs.data.map(|val| {
+                    if *val > base {
+                        return T::from_f64(1.0).unwrap();
+                    } else {
+                        return base;
+                    }
+                }) * (&*cur_grad)
+            }
+            ActivationFuncs::Sigmoid => {
+                lhs.data.map(|val| {
+                    Tensor::sigmoid_impl(*val)
+                        * (T::from_f64(1.0).unwrap() - Tensor::sigmoid_impl(*val))
+                }) * (&*cur_grad)
+            }
+            ActivationFuncs::TanH => {
+                lhs.data.map(|val| {
+                    T::from_f64(1.0).unwrap() - (val.tanh().powf(T::from_f64(2.0).unwrap()))
+                }) * (&*cur_grad)
+            }
         };
 
-        let result = TensorGrad {
+        let result = ops::TensorGrad {
             lhs: Tensor::new_from_arr(output),
             rhs: None,
         };
@@ -91,6 +101,10 @@ impl<T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug> Tenso
         self.operation(None, MathFn::ActivationFn(ActivationFuncs::LeakyReLu(base)))
             .unwrap()
     }
+}
+
+pub trait ActivationFuction<T: TensorFloat> { 
+    fn activation(&self,  tensor : &Tensor<T>);
 }
 
 #[cfg(test)]
