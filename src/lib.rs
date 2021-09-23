@@ -171,6 +171,12 @@ impl<T: TensorFloat> Tensor<T> {
         let arr = Array2::<T>::zeros(shape);
         Tensor::new_from_arr(arr)
     }
+
+    /// creates a Tensor with a given shape where every element is created by calling a function `func`
+    pub fn with_shape_from_simple_fn<F: FnMut() -> T>(shape: [usize; 2], func: F) -> Self {
+        let arr = Array2::from_shape_simple_fn(shape, func);
+        Tensor::new_from_arr(arr)
+    }
 }
 
 #[macro_export]
@@ -502,5 +508,18 @@ mod tests {
         assert_eq!(8.0, stacked.data[[2, 0]]);
         assert_eq!(9.0, stacked.data[[2, 1]]);
         assert_eq!(10.0, stacked.data[[2, 2]]);
+    }
+
+    #[test]
+    fn from_simple_fn_test() {
+        let expected_val = 3.2;
+        let func = || expected_val;
+        let shape = [2, 3];
+
+        let tensor = Tensor::with_shape_from_simple_fn(shape, func);
+
+        for val in tensor.data.iter() {
+            assert_eq!(*val, expected_val);
+        }
     }
 }
