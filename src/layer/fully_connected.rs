@@ -4,7 +4,7 @@ use super::Layer;
 use rand::Rng;
 
 /// A fully connected layer for a neural network. Use multiple networks with one another to create
-/// deep neural networks. Inputs to a Dense layer is expected to be in column-major order that is 
+/// deep neural networks. Inputs to a Dense layer is expected to be in column-major order that is
 /// a single example or input value is a column vector with dimensions `Nx1`
 ///
 /// ### Examples
@@ -21,7 +21,7 @@ impl<T: TensorFloat> Layer<T> for DenseLayer<T> {
         // given that the network weights are dimensions MxN
         // One assumes that the input data is of the dimensions
         // Mx1 for simple cases and KxN for cases where one batches data into K examples
-        let mut output = &self.weights.dot(&data).unwrap()  + &self.bias;
+        let mut output = &self.weights.dot(&data).unwrap() + &self.bias;
 
         output = match self.activation.as_ref() {
             None => output,
@@ -92,7 +92,6 @@ impl<T: TensorFloat> DenseLayer<T> {
         mut bias_fn: V,
         activation: Option<Box<dyn ActivationFuction<T>>>,
     ) -> Self {
-
         let new_weight_fn = |(_, _): (usize, usize)| weight_fn();
         let new_bias_fn = |(_, _): (usize, usize)| bias_fn();
 
@@ -108,43 +107,46 @@ impl<T: TensorFloat> DenseLayer<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        layer::{fully_connected::DenseLayer, Layer},
+        tensor, Tensor,
+    };
     use std::convert::TryFrom;
-    use crate::{Tensor, layer::{Layer, fully_connected::DenseLayer}, tensor};
 
     #[test]
     fn new_random_test() {
         todo!()
     }
 
-    // create a network with increasing value weights and biases based on their 
+    // create a network with increasing value weights and biases based on their
     // internal index
-    fn increasing_network(input_neurons : usize, output_neurons: usize) -> DenseLayer<f64>{ 
-        let weight_fn  = |(i , j)  | {(i * input_neurons + j) as f64}; 
-        let bias_fn = |(i, _)| {i as f64};
+    fn increasing_network(input_neurons: usize, output_neurons: usize) -> DenseLayer<f64> {
+        let weight_fn = |(i, j)| (i * input_neurons + j) as f64;
+        let bias_fn = |(i, _)| i as f64;
         DenseLayer::new_from_fn(input_neurons, output_neurons, weight_fn, bias_fn, None)
     }
 
     #[test]
     fn forward_test() {
-        let input_neurons = 2; 
-        let output_neurons = 3; 
+        let input_neurons = 2;
+        let output_neurons = 3;
 
-        let layer = increasing_network(input_neurons, output_neurons); 
+        let layer = increasing_network(input_neurons, output_neurons);
 
-        let input = tensor!(tensor!(1.0), tensor!(2.0)); 
-        let output = layer.forward(&input); 
-        let expected_val = tensor!(tensor!(2.0), tensor!(9.0), tensor!(16.0)); 
+        let input = tensor!(tensor!(1.0), tensor!(2.0));
+        let output = layer.forward(&input);
+        let expected_val = tensor!(tensor!(2.0), tensor!(9.0), tensor!(16.0));
 
-        assert_eq!(output.shape[0], output_neurons ); 
-        assert_eq!(expected_val.data, output.data); 
+        assert_eq!(output.shape[0], output_neurons);
+        assert_eq!(expected_val.data, output.data);
     }
 
     #[test]
-    fn new_from_fn_test() { 
-        let input_neurons = 2; 
-        let output_neurons = 3; 
+    fn new_from_fn_test() {
+        let input_neurons = 2;
+        let output_neurons = 3;
 
-        let layer = increasing_network(input_neurons, output_neurons); 
+        let layer = increasing_network(input_neurons, output_neurons);
         for (idx, val) in layer.weights.data.iter().enumerate() {
             assert_eq!(idx as f64, *val);
         }
@@ -165,13 +167,8 @@ mod tests {
         let bias_val = 4.25;
         let bias_fn = || bias_val;
 
-        let layer = DenseLayer::new_from_simple_fn(
-            input_neurons,
-            output_neurons,
-            weight_fn,
-            bias_fn,
-            None,
-        );
+        let layer =
+            DenseLayer::new_from_simple_fn(input_neurons, output_neurons, weight_fn, bias_fn, None);
 
         for val in layer.weights.data.iter() {
             assert_eq!(weight_val, *val);

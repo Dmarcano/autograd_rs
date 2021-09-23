@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 use errors::TensorErr;
-use ndarray::{Array, Array2, Dimension, ErrorKind, Ix2, ScalarOperand, ShapeError};
+use ndarray::{Array, Array2, ErrorKind, Ix2, ScalarOperand, ShapeError};
 use num_traits::{cast::FromPrimitive, Float};
 use std::{
     convert::{From, TryFrom},
@@ -35,7 +35,7 @@ pub struct Tensor<T: TensorFloat> {
     /// Tensors that are instantiated from an operation on a "parent" tensor take an immutable reference to the parent and use it's reference to
     /// speedily calculate gradients
     pub data: Rc<Array<T, Ix2>>,
-    pub shape: Rc<Vec<usize>>,
+    pub shape: Rc<[usize; 2]>,
     tracked: bool,
 
     // the left-hand-side (lhs), right-hand-side (rhs), and op
@@ -97,14 +97,14 @@ impl<T: TensorFloat> Tensor<T> {
         Ok(Tensor::new_from_arr(arr))
     }
 
-    //
+    /// creates a new tensor from an nd-array Array2
     pub(crate) fn new_from_arr(arr: Array2<T>) -> Self {
         let raw_shape = arr.raw_dim();
         let shape = [raw_shape[0], raw_shape[1]];
 
         Tensor {
             data: Rc::new(arr),
-            shape: Rc::new(shape.to_vec()),
+            shape: Rc::new(shape),
             tracked: false,
             lhs: None,
             rhs: None,
@@ -114,6 +114,7 @@ impl<T: TensorFloat> Tensor<T> {
         }
     }
 
+    /// creates a tensor with the parents given
     fn with_parents(self, lhs: &Tensor<T>, rhs: Option<&Tensor<T>>) -> Self {
         let parent = match rhs {
             None => None,
@@ -142,6 +143,27 @@ impl<T: TensorFloat> Tensor<T> {
     pub fn untracked(self) -> Self {
         Tensor {
             tracked: false,
+            ..self
+        }
+    }
+
+    /// Creates a new tensor by taking it's current value and adding it's own gradient to it.
+    /// given a current tensor with a value of `W`and a grad of `G`, this function creates a new tensor with
+    ///
+    /// `W = W + rate*G`
+    pub fn update(self, rate: T) -> Self {
+        let new_data = &*self.data + (&*self.grad.borrow() * rate);
+        Tensor {
+            data: Rc::new(new_data),
+            ..self
+        }
+    }
+
+    /// Creates a new tensor that is equivalent to the caller tensor expect that it
+    /// clears the gradient of the tensor to 0.
+    pub fn clear_grad(self) -> Self {
+        Tensor {
+            grad: Rc::new(RefCell::new(Array2::zeros(*self.shape))),
             ..self
         }
     }
@@ -538,5 +560,15 @@ mod tests {
         for (idx, val) in tensor.data.iter().enumerate() {
             assert_eq!(idx as f64, *val);
         }
+    }
+
+    #[test]
+    fn update_test() {
+        todo!()
+    }
+
+    #[test]
+    fn clear_grad_test() {
+        todo!()
     }
 }
