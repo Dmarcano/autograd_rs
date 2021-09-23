@@ -1,6 +1,6 @@
 use core::cell::RefCell;
 use errors::TensorErr;
-use ndarray::{Array, Array2, ErrorKind, Ix2, ScalarOperand, ShapeError};
+use ndarray::{Array, Array2, Dimension, ErrorKind, Ix2, ScalarOperand, ShapeError};
 use num_traits::{cast::FromPrimitive, Float};
 use std::{
     convert::{From, TryFrom},
@@ -173,8 +173,13 @@ impl<T: TensorFloat> Tensor<T> {
     }
 
     /// creates a Tensor with a given shape where every element is created by calling a function `func`
-    pub fn with_shape_from_simple_fn<F: FnMut() -> T>(shape: [usize; 2], func: F) -> Self {
+    pub fn from_simple_fn<F: FnMut() -> T>(shape: [usize; 2], func: F) -> Self {
         let arr = Array2::from_shape_simple_fn(shape, func);
+        Tensor::new_from_arr(arr)
+    }
+
+    pub fn from_fn<F: FnMut((usize, usize)) -> T>(shape: [usize; 2], func: F) -> Self {
+        let arr = Array2::from_shape_fn(shape, func);
         Tensor::new_from_arr(arr)
     }
 }
@@ -516,10 +521,22 @@ mod tests {
         let func = || expected_val;
         let shape = [2, 3];
 
-        let tensor = Tensor::with_shape_from_simple_fn(shape, func);
+        let tensor = Tensor::from_simple_fn(shape, func);
 
         for val in tensor.data.iter() {
             assert_eq!(*val, expected_val);
+        }
+    }
+
+    #[test]
+    fn from_fn_test() {
+        let func = |(i, j): (usize, usize)| (i * 3 + j) as f64;
+        let shape = [2, 3];
+
+        let tensor = Tensor::from_fn(shape, func);
+
+        for (idx, val) in tensor.data.iter().enumerate() {
+            assert_eq!(idx as f64, *val);
         }
     }
 }

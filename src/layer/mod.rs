@@ -6,5 +6,5 @@ pub mod fully_connected;
 pub trait Layer<T: TensorFloat> {
     /// feedforwards some input data and creates an output that can be either used in a loss function
     /// or feed to a subsequent layer in a network.
-    fn forward(&self, data: Tensor<T>) -> Tensor<T>;
+    fn forward(&self, data: &Tensor<T>) -> Tensor<T>;
 }

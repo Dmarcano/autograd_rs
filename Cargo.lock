@@ -32,6 +32,7 @@ dependencies = [
  "ndarray",
  "num-traits",
  "rand",
+ "rand_chacha",
  "thiserror",
 ]
 
