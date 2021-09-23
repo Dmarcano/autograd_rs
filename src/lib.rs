@@ -147,16 +147,21 @@ impl<T: TensorFloat> Tensor<T> {
         }
     }
 
-    /// Creates a new tensor by taking it's current value and adding it's own gradient to it.
+    /// If a Tensor is tracked, creates a new tensor by taking it's current value and adding it's own gradient to it.
     /// given a current tensor with a value of `W`and a grad of `G`, this function creates a new tensor with
     ///
     /// `W = W + rate*G`
+    ///
+    /// If a Tensor is untracked then no operation is done and `self` is returned
     pub fn update(self, rate: T) -> Self {
-        let new_data = &*self.data + (&*self.grad.borrow() * rate);
-        Tensor {
-            data: Rc::new(new_data),
-            ..self
+        if self.tracked {
+            let new_data = &*self.data + (&*self.grad.borrow() * rate);
+            return Tensor {
+                data: Rc::new(new_data),
+                ..self
+            };
         }
+        self
     }
 
     /// Creates a new tensor that is equivalent to the caller tensor expect that it
