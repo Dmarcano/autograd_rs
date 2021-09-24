@@ -12,6 +12,7 @@ pub mod forward_mode;
 mod graph;
 pub mod layer;
 mod ops;
+pub mod optimization;
 
 /// A trait that defines the floating-point numbers that are expected to be used by a Tensor
 pub trait TensorFloat:

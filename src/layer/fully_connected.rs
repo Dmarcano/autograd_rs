@@ -29,6 +29,11 @@ impl<T: TensorFloat> Layer<T> for DenseLayer<T> {
         };
         output
     }
+
+    fn update_parameters(&mut self, rate: T) {
+        self.weights = self.weights.clone().update(rate);
+        self.bias = self.bias.clone().update(rate);
+    }
 }
 
 impl<T: TensorFloat> DenseLayer<T> {
