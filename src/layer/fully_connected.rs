@@ -45,16 +45,28 @@ impl<T: TensorFloat> DenseLayer<T> {
         let mut func = || T::from_f64((rng).gen_range(-1.0..=1.0)).unwrap();
 
         let weight_shape = [output_neurons, input_neurons];
-        let weights = Tensor::from_simple_fn(weight_shape, &mut func);
+        let weights = Tensor::from_simple_fn(weight_shape, &mut func).tracked();
 
         let bias_shape = [output_neurons, 1];
-        let bias = Tensor::from_simple_fn(bias_shape, &mut func);
+        let bias = Tensor::from_simple_fn(bias_shape, &mut func).tracked();
 
         Self {
             weights,
             bias,
             activation,
         }
+    }
+
+    /// Makes the layer unfrozen that is able to be updated from gradient accumulation
+    pub fn unfreeze(&mut self) {
+        self.weights = self.weights.clone().untracked();
+        self.bias = self.bias.clone().untracked();
+    }
+
+    /// Makes the layer frozen, that is unable to be updated by learning methods
+    pub fn freeze(&mut self) {
+        self.weights = self.weights.clone().tracked();
+        self.bias = self.bias.clone().tracked();
     }
 
     // creates a neural network using two functions that take in
@@ -67,10 +79,10 @@ impl<T: TensorFloat> DenseLayer<T> {
     ) -> Self {
         // the matrix is input_neurons X output_neurons dimensions
         let weight_shape = [output_neurons, input_neurons];
-        let weights = Tensor::from_fn(weight_shape, weight_fn);
+        let weights = Tensor::from_fn(weight_shape, weight_fn).tracked();
 
         let bias_shape = [output_neurons, 1];
-        let bias = Tensor::from_fn(bias_shape, bias_fn);
+        let bias = Tensor::from_fn(bias_shape, bias_fn).tracked();
         // the bias is output_neurons
 
         Self {
@@ -111,11 +123,33 @@ mod tests {
         layer::{fully_connected::DenseLayer, Layer},
         tensor, Tensor,
     };
+    use ndarray::array;
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha8Rng;
     use std::convert::TryFrom;
 
     #[test]
     fn new_random_test() {
-        todo!()
+        let input_neurons = 2;
+        let output_neurons = 3;
+
+        let mut rng = ChaCha8Rng::from_seed(Default::default());
+        let layer = DenseLayer::<f64>::new_random(input_neurons, output_neurons, None, &mut rng);
+        // got these numbers from printing the seedable rng outputs once
+        let expected_weights = array![
+            [0.6738395137652948, 0.26284898813304625],
+            [-0.5351683130665029, -0.7648179607770014],
+            [-0.48879602856526627, -0.8020499621501127]
+        ];
+
+        let expected_bias = array![
+            [-0.9868003303940736],
+            [-0.4766220977890224],
+            [-0.3612778288989301]
+        ];
+
+        assert_eq!(expected_weights, *layer.weights.data);
+        assert_eq!(expected_bias, *layer.bias.data);
     }
 
     // create a network with increasing value weights and biases based on their
