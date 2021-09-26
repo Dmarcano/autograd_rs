@@ -112,7 +112,7 @@ fn minimize_x_displacement() {
 }
 
 fn main() {
-    //    let _out =  maximize_height(0.1);
-    // maximize_range()
-    minimize_x_displacement()
+    let _out =  maximize_height(0.1);
+    maximize_range();
+    minimize_x_displacement();
 }
