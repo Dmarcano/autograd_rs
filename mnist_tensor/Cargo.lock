@@ -89,6 +89,7 @@ version = "0.1.0"
 dependencies = [
  "autograd_rs",
  "mnist",
+ "rand",
 ]
 
 [[package]]

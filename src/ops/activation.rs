@@ -106,7 +106,7 @@ impl<T: TensorFloat> Tensor<T> {
 
 /// An activation function that takes a Tensor and applies the proper activation for it.
 /// Specific activation trait objects are used as a convenience when implementing neural networks
-pub trait ActivationFuction<T: TensorFloat> {
+pub(crate) trait ActivationFuction<T: TensorFloat> {
     fn activation(&self, tensor: &Tensor<T>) -> Tensor<T>;
 }
 
@@ -116,6 +116,19 @@ pub struct ReLu;
 impl<T: TensorFloat> ActivationFuction<T> for ReLu {
     fn activation(&self, tensor: &Tensor<T>) -> Tensor<T> {
         tensor.relu()
+    }
+}
+
+impl<T: TensorFloat> From<ActivationFuncs<T>> for Box<dyn ActivationFuction<T>> {
+    fn from(activation: ActivationFuncs<T>) -> Self {
+        let out: Box<dyn ActivationFuction<T>> = match activation {
+            ActivationFuncs::ReLu => Box::new(ReLu),
+            ActivationFuncs::LeakyReLu(base) => Box::new(LeakyRelu{base}),
+            ActivationFuncs::Sigmoid => Box::new(Sigmoid),
+            ActivationFuncs::TanH => Box::new(TanH),
+        };
+
+        out
     }
 }
 

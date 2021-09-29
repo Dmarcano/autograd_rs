@@ -1,4 +1,4 @@
-use crate::{ops::activation::ActivationFuction, Tensor, TensorFloat};
+use crate::{Tensor, TensorFloat, ops::activation::{ActivationFuction, ActivationFuncs}};
 
 use super::Layer;
 use rand::Rng;
@@ -42,7 +42,7 @@ impl<T: TensorFloat> DenseLayer<T> {
     pub fn new_random<U: Rng + ?Sized>(
         input_neurons: usize,
         output_neurons: usize,
-        activation: Option<Box<dyn ActivationFuction<T>>>,
+        activation: Option<ActivationFuncs<T>>,
         rng: &mut U,
     ) -> Self {
         // since we only have one mutable ref to rng, we can't call two closures on rng in the same scope
@@ -54,6 +54,11 @@ impl<T: TensorFloat> DenseLayer<T> {
 
         let bias_shape = [output_neurons, 1];
         let bias = Tensor::from_simple_fn(bias_shape, &mut func).tracked();
+
+        let activation : Option<Box<dyn ActivationFuction<T>>>  = match activation { 
+            Some(func) => Some(func.into()),
+            None => None
+        };
 
         Self {
             weights,
@@ -80,7 +85,7 @@ impl<T: TensorFloat> DenseLayer<T> {
         output_neurons: usize,
         weight_fn: U,
         bias_fn: V,
-        activation: Option<Box<dyn ActivationFuction<T>>>,
+        activation: Option<ActivationFuncs<T>>,
     ) -> Self {
         // the matrix is input_neurons X output_neurons dimensions
         let weight_shape = [output_neurons, input_neurons];
@@ -89,6 +94,11 @@ impl<T: TensorFloat> DenseLayer<T> {
         let bias_shape = [output_neurons, 1];
         let bias = Tensor::from_fn(bias_shape, bias_fn).tracked();
         // the bias is output_neurons
+
+        let activation : Option<Box<dyn ActivationFuction<T>>>  = match activation { 
+            Some(func) => Some(func.into()),
+            None => None
+        };
 
         Self {
             weights,
@@ -107,7 +117,7 @@ impl<T: TensorFloat> DenseLayer<T> {
         // own unique type even if both implement the same interface. Using func : &mut dyn FnMut is another fix
         mut weight_fn: U,
         mut bias_fn: V,
-        activation: Option<Box<dyn ActivationFuction<T>>>,
+        activation: Option<ActivationFuncs<T>>,
     ) -> Self {
         let new_weight_fn = |(_, _): (usize, usize)| weight_fn();
         let new_bias_fn = |(_, _): (usize, usize)| bias_fn();
