@@ -18,12 +18,28 @@ pub extern crate rand;
 
 /// A trait that defines the floating-point numbers that are expected to be used by a Tensor
 pub trait TensorFloat:
-    Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone + std::fmt::Debug
+    Float
+    + FromPrimitive
+    + ScalarOperand
+    + 'static
+    + Copy
+    + Clone
+    + std::fmt::Debug
+    + PartialOrd
+    + PartialEq
 {
 }
 
 impl<T> TensorFloat for T where
-    T: Float + FromPrimitive + ScalarOperand + 'static + Copy + Clone + std::fmt::Debug
+    T: Float
+        + FromPrimitive
+        + ScalarOperand
+        + 'static
+        + Copy
+        + Clone
+        + std::fmt::Debug
+        + PartialOrd
+        + PartialEq
 {
 }
 
@@ -306,7 +322,7 @@ impl<T: TensorFloat> std::fmt::Display for Tensor<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         fn graph_traversal<T>(tensor: &Tensor<T>, level: usize) -> String
         where
-            T: Float + FromPrimitive + ScalarOperand + 'static + std::fmt::Debug,
+            T: TensorFloat,
         {
             let indent = " ".to_string().repeat(level);
 

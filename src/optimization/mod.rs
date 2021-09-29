@@ -1,4 +1,4 @@
-use crate::{TensorFloat, layer::Layer};
+use crate::{layer::Layer, TensorFloat};
 
 pub mod sgd;
 

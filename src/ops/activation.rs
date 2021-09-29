@@ -14,6 +14,7 @@ pub enum ActivationFuncs<T: TensorFloat> {
     LeakyReLu(T),
     Sigmoid,
     TanH,
+    SoftMax(T),
 }
 
 impl<T: TensorFloat> Tensor<T> {
@@ -26,6 +27,11 @@ impl<T: TensorFloat> Tensor<T> {
                 .map(|val| (T::from_f64(0.0).unwrap() + (-*val).exp()).recip()),
 
             ActivationFuncs::TanH => self.data.map(|val| val.tanh()),
+            ActivationFuncs::SoftMax(_) => {
+                // note this can break with large values see: https://eli.thegreenplace.net/2016/the-softmax-function-and-its-derivative/
+                let norm = self.data.map(|val| val.exp()).sum();
+                self.data.map(|val| val.exp() / norm)
+            }
         };
         Ok(output)
     }
@@ -67,6 +73,7 @@ impl<T: TensorFloat> Tensor<T> {
                     T::from_f64(1.0).unwrap() - (val.tanh().powf(T::from_f64(2.0).unwrap()))
                 }) * (&*cur_grad)
             }
+            ActivationFuncs::SoftMax(_) => todo!(),
         };
 
         let result = ops::TensorGrad {
@@ -75,6 +82,10 @@ impl<T: TensorFloat> Tensor<T> {
         };
 
         Ok(result)
+    }
+
+    fn d_softmax_impl(softmax: &Array2<T>) {
+        let output = Array2::<T>::zeros(softmax.raw_dim());
     }
 
     //
@@ -123,9 +134,10 @@ impl<T: TensorFloat> From<ActivationFuncs<T>> for Box<dyn ActivationFuction<T>> 
     fn from(activation: ActivationFuncs<T>) -> Self {
         let out: Box<dyn ActivationFuction<T>> = match activation {
             ActivationFuncs::ReLu => Box::new(ReLu),
-            ActivationFuncs::LeakyReLu(base) => Box::new(LeakyRelu{base}),
+            ActivationFuncs::LeakyReLu(base) => Box::new(LeakyRelu { base }),
             ActivationFuncs::Sigmoid => Box::new(Sigmoid),
             ActivationFuncs::TanH => Box::new(TanH),
+            ActivationFuncs::SoftMax(_) => todo!(),
         };
 
         out
@@ -185,5 +197,10 @@ mod tests {
     #[test]
     fn leaky_relu_test() {
         unimplemented!()
+    }
+
+    #[test]
+    fn softmax_test() {
+        todo!()
     }
 }

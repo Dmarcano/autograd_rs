@@ -1,4 +1,7 @@
-use crate::{Tensor, TensorFloat, ops::activation::{ActivationFuction, ActivationFuncs}};
+use crate::{
+    ops::activation::{ActivationFuction, ActivationFuncs},
+    Tensor, TensorFloat,
+};
 
 use super::Layer;
 use rand::Rng;
@@ -55,9 +58,9 @@ impl<T: TensorFloat> DenseLayer<T> {
         let bias_shape = [output_neurons, 1];
         let bias = Tensor::from_simple_fn(bias_shape, &mut func).tracked();
 
-        let activation : Option<Box<dyn ActivationFuction<T>>>  = match activation { 
+        let activation: Option<Box<dyn ActivationFuction<T>>> = match activation {
             Some(func) => Some(func.into()),
-            None => None
+            None => None,
         };
 
         Self {
@@ -95,9 +98,9 @@ impl<T: TensorFloat> DenseLayer<T> {
         let bias = Tensor::from_fn(bias_shape, bias_fn).tracked();
         // the bias is output_neurons
 
-        let activation : Option<Box<dyn ActivationFuction<T>>>  = match activation { 
+        let activation: Option<Box<dyn ActivationFuction<T>>> = match activation {
             Some(func) => Some(func.into()),
-            None => None
+            None => None,
         };
 
         Self {
