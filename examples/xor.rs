@@ -66,7 +66,7 @@ fn main() {
     let mut net = Model::new(&top);
 
     let learning_rate = -0.2;
-    let num_epochs = 10;
+    let num_epochs = 100;
 
     for _ in 0..num_epochs { 
 
@@ -74,12 +74,16 @@ fn main() {
 
         println!("targets {:#?}", targets.data); 
         println!("=============================================");
+
         let output = net.forward(&inputs); 
+        println!("outputs {:#?}", output.data); 
+
         let diff = &targets - &output; 
         println!("=============================================");
         println!("diff {:#?}", diff.data); 
-        println!("=============================================");
-        diff.backward().unwrap();
+        println!("=============================================\n\n");
+        let squared_diff = &diff*&diff; 
+        squared_diff.backward().unwrap();
         net.update_parameters(learning_rate);
         net.clear_grad();
     }
