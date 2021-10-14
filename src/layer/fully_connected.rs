@@ -23,8 +23,9 @@ impl<T: TensorFloat> Layer<T> for DenseLayer<T> {
     fn forward(&self, data: &Tensor<T>) -> Tensor<T> {
         // given that the network weights are dimensions MxN
         // One assumes that the input data is of the dimensions
-        // Mx1 for simple cases and KxN for cases where one batches data into K examples
-        let mut output = &self.weights.dot(&data).unwrap() + &self.bias;
+        // Mx1 for simple cases and MxK for cases where one batches data into K examples
+        let dot_out = &self.weights.dot(&data).unwrap();
+        let mut output =  &self.bias + dot_out;
 
         output = match self.activation.as_ref() {
             None => output,

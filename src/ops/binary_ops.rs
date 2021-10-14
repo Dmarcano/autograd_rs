@@ -88,22 +88,19 @@ impl<T: TensorFloat> Tensor<T> {
 
     /// takes two Tensors lhs and rhs respectively and
     /// returns true if they can be broadcasted together
+    /// Compare axes beginning with the last axis of each shape.
     pub fn can_broadcast(lhs: &Tensor<T>, rhs: &Tensor<T>) -> bool {
         let lhs_shape = lhs.data.shape();
         let rhs_shape = rhs.data.shape();
-        let lhs_rank = lhs_shape.len();
-        let rhs_rank = rhs_shape.len();
-        if lhs_rank != rhs_rank {
-            return false;
-        }
-        for i in 0..lhs_rank {
-            if lhs_shape[i] != rhs_shape[i] {
-                return false;
-            }
-        }
-        return true;
+
+        // if any of the dimensions are 1 then it can be broadcasted
+
+        let first_match = lhs_shape[0] == rhs_shape[0] || lhs_shape[0] == 1 || rhs_shape[0] == 1; 
+        let second_match = lhs_shape[1] == rhs_shape[1] || lhs_shape[1] == 1 || rhs_shape[1] == 1; 
+        return first_match && second_match;
     }
 
+    
     /// Takes the matrix product of two 2-Dimensional Tensors.
     /// The two Tensors must have dimensionas that agree and must be multipliable or it will panic
     /// returns an error if the two tensors are not broadcastable
@@ -229,6 +226,10 @@ mod tests {
         assert_eq!(6.0 + 9.0, out.data[[1, 2]]);
     }
 
+    fn broadcast_add_test() { 
+        todo!()
+    }
+
     #[test]
     fn sub_test() {
         let tensor1 = tensor!(tensor!(1.0, 2.0, 3.0), tensor!(4.0, 5.0, 6.0)).tracked();
@@ -247,6 +248,11 @@ mod tests {
         assert_eq!(4.0 - 7.0, out.data[[1, 0]]);
         assert_eq!(5.0 - 8.0, out.data[[1, 1]]);
         assert_eq!(6.0 - 9.0, out.data[[1, 2]]);
+    }
+
+    #[test]
+    fn broadcast_mul_test() { 
+
     }
 
     #[test]

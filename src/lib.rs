@@ -117,7 +117,7 @@ impl<T: TensorFloat> Tensor<T> {
     }
 
     /// creates a new tensor from an nd-array Array2
-    pub(crate) fn new_from_arr(arr: Array2<T>) -> Self {
+    pub fn new_from_arr(arr: Array2<T>) -> Self {
         let raw_shape = arr.raw_dim();
         let shape = [raw_shape[0], raw_shape[1]];
 
