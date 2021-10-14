@@ -26,6 +26,10 @@ impl Model {
             .collect();
         Self { layers }
     }
+
+    pub fn clear_grad(&mut self) { 
+        self.layers.iter_mut().for_each(|layer|layer.clear_grad())
+    }
 }
 
 impl Layer<f32> for Model {
@@ -49,22 +53,34 @@ fn main() {
         [1.0, 1.0],
     ].t().to_owned();
     
-    let inputs = Tensor::new_from_arr(inputs); 
-    let targets = array![[-1.0], [1.0], [1.0], [-1.0]];
+    let inputs = Tensor::new_from_arr(inputs).untracked(); 
+    let targets = Tensor::new_from_arr(array![[-1.0], [1.0], [1.0], [-1.0]].t().to_owned()).untracked();
+
+    println!("targets: {:#?}", targets.data);
 
     let top = [
-        LayerTopology{input : 2, output: 2, activation : Some(ActivationFuncs::TanH)},
-        LayerTopology{input : 2, output: 1, activation : Some(ActivationFuncs::TanH)}
+        LayerTopology{input : 2, output: 4, activation : None},
+        LayerTopology{input : 4, output: 1, activation : Some(ActivationFuncs::TanH)}
     ]; 
 
-    let net = Model::new(&top);
+    let mut net = Model::new(&top);
 
-    let num_epochs = 3;
+    let learning_rate = -0.2;
+    let num_epochs = 10;
 
     for _ in 0..num_epochs { 
+
+        println!("======================= NEW EPOCH =======================");
+
+        println!("targets {:#?}", targets.data); 
+        println!("=============================================");
         let output = net.forward(&inputs); 
+        let diff = &targets - &output; 
         println!("=============================================");
-        println!("{:#?}", output.data); 
+        println!("diff {:#?}", diff.data); 
         println!("=============================================");
+        diff.backward().unwrap();
+        net.update_parameters(learning_rate);
+        net.clear_grad();
     }
 }
