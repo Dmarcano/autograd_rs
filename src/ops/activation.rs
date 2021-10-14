@@ -84,9 +84,9 @@ impl<T: TensorFloat> Tensor<T> {
         Ok(result)
     }
 
-    fn d_softmax_impl(softmax: &Array2<T>) {
-        let output = Array2::<T>::zeros(softmax.raw_dim());
-    }
+    // fn d_softmax_impl(softmax: &Array2<T>) {
+    //     let _output = Array2::<T>::zeros(softmax.raw_dim());
+    // }
 
     //
     fn sigmoid_impl(val: T) -> T {

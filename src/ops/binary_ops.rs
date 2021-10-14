@@ -225,6 +225,7 @@ mod tests {
         assert_eq!(6.0 + 9.0, out.data[[1, 2]]);
     }
 
+    #[test]
     fn broadcast_add_test() {
         todo!()
     }
