@@ -95,12 +95,11 @@ impl<T: TensorFloat> Tensor<T> {
 
         // if any of the dimensions are 1 then it can be broadcasted
 
-        let first_match = lhs_shape[0] == rhs_shape[0] || lhs_shape[0] == 1 || rhs_shape[0] == 1; 
-        let second_match = lhs_shape[1] == rhs_shape[1] || lhs_shape[1] == 1 || rhs_shape[1] == 1; 
+        let first_match = lhs_shape[0] == rhs_shape[0] || lhs_shape[0] == 1 || rhs_shape[0] == 1;
+        let second_match = lhs_shape[1] == rhs_shape[1] || lhs_shape[1] == 1 || rhs_shape[1] == 1;
         return first_match && second_match;
     }
 
-    
     /// Takes the matrix product of two 2-Dimensional Tensors.
     /// The two Tensors must have dimensionas that agree and must be multipliable or it will panic
     /// returns an error if the two tensors are not broadcastable
@@ -226,7 +225,7 @@ mod tests {
         assert_eq!(6.0 + 9.0, out.data[[1, 2]]);
     }
 
-    fn broadcast_add_test() { 
+    fn broadcast_add_test() {
         todo!()
     }
 
@@ -251,9 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn broadcast_mul_test() { 
-
-    }
+    fn broadcast_mul_test() {}
 
     #[test]
     fn mul_test() {

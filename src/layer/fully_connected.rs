@@ -25,7 +25,7 @@ impl<T: TensorFloat> Layer<T> for DenseLayer<T> {
         // One assumes that the input data is of the dimensions
         // Mx1 for simple cases and MxK for cases where one batches data into K examples
         let dot_out = &self.weights.dot(&data).unwrap();
-        let mut output =  &self.bias + dot_out;
+        let mut output = &self.bias + dot_out;
 
         output = match self.activation.as_ref() {
             None => output,
@@ -112,10 +112,9 @@ impl<T: TensorFloat> DenseLayer<T> {
     }
 
     /// clears the gradient of the layer
-    pub fn clear_grad(&mut self) { 
+    pub fn clear_grad(&mut self) {
         self.weights = self.weights.clone().clear_grad();
         self.bias = self.bias.clone().clear_grad();
-
     }
 
     /// creates a neural network with a given input and output neuron sizes while calling a specific function on each element of the
@@ -240,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn backward_test() { 
+    fn backward_test() {
         todo!()
     }
 }
