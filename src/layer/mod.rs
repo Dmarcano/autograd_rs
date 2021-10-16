@@ -10,4 +10,7 @@ pub trait Layer<T: TensorFloat> {
 
     /// updates the parameters of a layer after carrying it's feedforward and backwards passes
     fn update_parameters(&mut self, rate: T);
+
+    /// clears the gradient of the Layer for future gradient calculations
+    fn clear_grad(&mut self);
 }

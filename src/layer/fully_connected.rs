@@ -38,6 +38,12 @@ impl<T: TensorFloat> Layer<T> for DenseLayer<T> {
         self.weights = self.weights.clone().update(rate);
         self.bias = self.bias.clone().update(rate);
     }
+
+    /// clears the gradient of the layer
+    fn clear_grad(&mut self) {
+        self.weights = self.weights.clone().clear_grad();
+        self.bias = self.bias.clone().clear_grad();
+    }
 }
 
 impl<T: TensorFloat> DenseLayer<T> {
@@ -111,11 +117,7 @@ impl<T: TensorFloat> DenseLayer<T> {
         }
     }
 
-    /// clears the gradient of the layer
-    pub fn clear_grad(&mut self) {
-        self.weights = self.weights.clone().clear_grad();
-        self.bias = self.bias.clone().clear_grad();
-    }
+    
 
     /// creates a neural network with a given input and output neuron sizes while calling a specific function on each element of the
     /// weights and biases for each neuron. The calling function is called with no parameters

@@ -29,9 +29,6 @@ impl Model {
         Self { layers }
     }
 
-    pub fn clear_grad(&mut self) {
-        self.layers.iter_mut().for_each(|layer| layer.clear_grad())
-    }
 }
 
 impl Layer<f32> for Model {
@@ -45,6 +42,10 @@ impl Layer<f32> for Model {
         self.layers
             .iter_mut()
             .for_each(|layer| layer.update_parameters(rate))
+    }
+
+    fn clear_grad(&mut self) {
+        self.layers.iter_mut().for_each(|layer| layer.clear_grad())
     }
 }
 
